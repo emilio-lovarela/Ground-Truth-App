@@ -1,0 +1,37 @@
+<MFileChooser>:
+	id:pop
+	size_hint: .8, .8
+    # auto_dismiss: False
+    title: FileCho.path
+
+	BoxLayout:
+		orientation: 'vertical'
+		rows: 3
+	
+		Label:
+			size_hint: 1, .2
+			text: "Select images folder"
+			valign: "top"
+			halign: "center"
+			font_size: 30
+			color: 1,0,1,1
+
+	    FileChooserIconView:
+	    	id: FileCho
+	    	size_hint: 1, 1
+	        filters: ["*.png", "*.jpg"]
+	        rootpath: 'C:\\Users\\usuario\\Documents\\Proyectos\\Generacion_video'
+		    
+	    RelativeLayout:
+	    	size_hint: 1, .2
+	    	orientation: 'horizontal'
+	    	Button:
+	    		size_hint: 0.3, .5
+	    		pos_hint: {'center_x': .8, 'center_y': .5}
+	    		text: "Select current folder"
+	    		on_press: Path = FileCho.path
+	    		on_press: print(FileCho.path)
+	    		on_press: pop.dismiss()
+
+<SimpleButton>:
+    on_press: self.fire_popup()
