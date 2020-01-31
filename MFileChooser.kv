@@ -1,4 +1,5 @@
 <MFileChooser>:
+	idtxt: id_txt
 	id:pop
 	size_hint: .8, .8
     # auto_dismiss: False
@@ -20,11 +21,12 @@
 	    	id: FileCho
 	    	size_hint: 1, 1
 	        filters: ["*.png", "*.jpg"]
-	        rootpath: 'C:\\Users\\usuario\\Documents\\Proyectos\\Generacion_video'
-		    
+		    rootpath: root.RootPath
+
 	    RelativeLayout:
 	    	size_hint: 1, .2
 	    	orientation: 'horizontal'
+
 	    	Button:
 	    		size_hint: 0.3, .5
 	    		pos_hint: {'center_x': .8, 'center_y': .5}
@@ -33,5 +35,30 @@
 	    		on_press: print(FileCho.path)
 	    		on_press: pop.dismiss()
 
-<SimpleButton>:
-    on_press: self.fire_popup()
+	    	TextInput:
+	    		id: id_txt
+	    		size_hint: 0.3, .5
+	    		pos_hint: {'center_x': .32, 'center_y': .5}
+	    		hint_text:'Enter Path: "/" to restart'
+	    		multiline: False
+	    		on_text_validate: root.path_exist(self.text)
+
+	    	Label:
+	    		text: "Set Home: "
+	    		size_hint: 0.3, .5
+	    		pos_hint: {'center_x': .1, 'center_y': .55}
+
+	    	Label:
+	    		text: root.Invalid_Path
+	    		bold: True
+	    		size_hint: 0.3, .5
+	    		pos_hint: {'center_x': .56, 'center_y': .55}
+	    		color: 1,0,0,1
+
+<PopupButton>:
+	size_hint: 1,1
+
+<Test>:
+	PopupButton:
+		text: "Test Screen"
+		on_press: self.fire_popup(root.obj)

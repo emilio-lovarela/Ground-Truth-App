@@ -1,5 +1,6 @@
 import glob, os
 from PIL import Image, ImageDraw
+from math import cos, sin
 from kivy.app import App
 from kivy.properties import NumericProperty, ListProperty, \
         BooleanProperty, StringProperty, ObjectProperty
@@ -7,8 +8,8 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.lang import Builder
 from kivy.clock import Clock
 from kivy.graphics import Line
-from math import cos, sin
 from kivy.config import Config
+
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 
 # Builder.load_file("GroundTruthBuilder.kv")
