@@ -1,5 +1,3 @@
-from kivy.app import App
-from kivy.uix.boxlayout import BoxLayout
 from kivy.lang import Builder
 from kivy.uix.popup import Popup
 from kivy.uix.button import Button
@@ -7,37 +5,39 @@ from kivy.storage.jsonstore import JsonStore
 
 from kivy.properties import StringProperty, ObjectProperty
 from kivy.uix.textinput import TextInput
-import os
 
-from os.path import join, isdir, exists
+from os.path import isdir, exists, isfile
 
 Builder.load_file("MFileChooser.kv")
 
 class MFileChooser(Popup):
 
-	Path = StringProperty()
+	path = StringProperty('')
 	RootPath = StringProperty('')
 	Invalid_Path = StringProperty('')
 	idtxt = ObjectProperty()
+	store = JsonStore('RootPath.json')
 
 	def __init__(self):
 		super(MFileChooser, self).__init__()
 		# Load Rootpath if exists
-		store = JsonStore('RootPath.json')
-		if store.exists('RootPath'):
-			self.RootPath = store.get('RootPath')['Path']
+		if self.store.exists('RootPath'):
+			self.RootPath = self.store.get('RootPath')['Path']
 
-	def is_dir(self, directory, filename):
-		return join(directory, filename)
+	def is_not_dir(self, files):
+		# Method for filter files/folders
+		for i in files:
+			if isfile(i):
+				return True
+		return False
 
 	def path_exist(self, file_path):
-		if not os.path.exists(file_path):
+		if not exists(file_path):
 			self.Invalid_Path = "Invalid Path!"
 
 		else:
-			# Store the value
-			store = JsonStore('RootPath.json')
-			store.put('RootPath', Path=file_path)
+			# Store the value of RootPath
+			self.store.put('RootPath', Path=file_path)
 
 			# Update RootPath
 			self.RootPath = file_path
@@ -46,17 +46,5 @@ class MFileChooser(Popup):
 
 class PopupButton(Button):
 
-	def fire_popup(self, obj):
-		pops = obj
+	def fire_popup(self, pops):
 		pops.open()
-
-class Test(BoxLayout):
-	obj = MFileChooser()
-	pass
-
-class MyApp(App):
-	def build(self):
-		return Test()
-
-if __name__ == '__main__':
-	MyApp().run()

@@ -1,5 +1,6 @@
 <LinePlay>:
 	image_car: image1
+	slider_max: slimax
 	orientation: 'horizontal'
 
     canvas:
@@ -20,11 +21,23 @@
 		    pos: self.pos
 		
 			Label:
-				text: root.img
+				text: root.img[root.img.find("\\") + 1:]
 				valign: "top"
 				halign: "center"
 				font_size: 30
 				color: 1,0,1,1
+
+		RelativeLayout:
+			size_hint: 1, .1
+		    pos: self.pos
+		
+			PopupButton:
+				text: 'Select Image Folder'
+				size_hint: .8, 1
+				pos_hint: {'center_x': .58, 'center_y': .55}
+				font_size: 30
+				color: 1,1,0,1
+				on_press: self.fire_popup(root.obj)
 
 	    GridLayout:
 	    	orientation: 'vertical'
@@ -36,6 +49,7 @@
 				text: 'Change Image'
 
 		    Slider:
+		    	id: slimax
 		    	# Reiniciate all to default
 		    	value: 0
 		    	on_value: root.changeimage(self.value)
@@ -67,7 +81,6 @@
 
 	        Button:
 	            size_hint: 1, 1
-	            # size: 100, 44
 	            text: 'Clear'
 	            on_press: root.points = []
 	            on_press: root.lpoints = []
@@ -84,6 +97,7 @@
 	        Button:
 	        	size_hint: 1, 1
 	            text: 'Save mask'
+	            disabled: root.disa
 	            on_press: root.save_image(image1.size, image1.pos)
 	            on_press: root.tex_control = "Image saved!"
 
