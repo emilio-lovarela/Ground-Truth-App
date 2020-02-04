@@ -13,11 +13,11 @@
 
     BoxLayout:
     	orientation: 'vertical'
-		size_hint: 1, 1
+		size_hint: .3, 1
 	    pos: self.pos
 		
 		BoxLayout:
-			size_hint: 1, 0.2
+			size_hint: 1, .2
 		    pos: self.pos
 		
 			Label:
@@ -112,15 +112,15 @@
 	            on_press: root.new_line()
 	            on_press: Tog.state = 'normal'
 
-	BoxLayout:
+	AnchorLayout:
 		size_hint: 1, 1
         pos: self.pos
 
 	    Image:
 	    	id: image1
 	    	source: root.img
-	    	# size_hint: None, None
-	    	# size: 512, 992
+	    	size_hint: None, None
+	    	size: 522, 962
 
 	    	canvas.after:
 		        Color:

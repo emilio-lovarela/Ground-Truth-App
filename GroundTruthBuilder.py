@@ -8,6 +8,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.lang import Builder
 from kivy.graphics import Line
 from kivy.config import Config
+from kivy.core.window import Window # Just in windows?
 from MFileChooser import MFileChooser, PopupButton
 
 from kivy.event import EventDispatcher
@@ -35,7 +36,7 @@ class LinePlay(BoxLayout):
 	LImages = len(images) - 1
 	img = StringProperty(images[0])
 	image_car = ObjectProperty() # Extract relative positions
-	
+
 	# Text vanish
 	tex_control = StringProperty("")
 	
@@ -57,6 +58,8 @@ class LinePlay(BoxLayout):
 				self.slider_max.max = len(self.images) - 1
 				self.slider_max.value = 0
 				self.img = self.images[0]
+				im_size = Image.open(self.img)
+				self.image_car.size = im_size.size
 				self.disa = False
 
 			self.lis.pop(0)
@@ -64,10 +67,26 @@ class LinePlay(BoxLayout):
 	def changeimage(self, value):
 		self.close = False # Reiniciate close line
 		self.img = self.images[int(value)]
+		im_size = Image.open(self.img)
+		self.image_car.size = im_size.size
 
 	def on_touch_down(self, touch):
 		if super(LinePlay, self).on_touch_down(touch):
 			return True
+
+		# Scrolling detection, changing image	
+		if touch.is_mouse_scrolling:
+			if touch.button == 'scrolldown':
+				if self.slider_max.max > self.slider_max.value:
+					self.slider_max.value = self.slider_max.value + 1
+				return True
+			
+			elif touch.button == 'scrollup':
+				if self.slider_max.min < self.slider_max.value:
+					self.slider_max.value = self.slider_max.value - 1
+				return True
+
+		# Grab Clicks
 		touch.grab(self)
 		self.points.append(touch.pos)
 		self.lpoints.append((touch.x - self.image_car.pos[0], self.image_car.size[1] - (touch.y - self.image_car.pos[1])))
@@ -87,6 +106,7 @@ class LinePlay(BoxLayout):
 		return super(LinePlay, self).on_touch_up(touch)   
 
 	def save_image(self, size, pos):
+
 		# Generated mask
 		final_image = Image.new("RGB", [int(round(size[0])),int(round(size[1]))])
 		draw = ImageDraw.Draw(final_image)
@@ -145,4 +165,5 @@ class GroundTruthBuilder(App):
 
 
 if __name__ == '__main__':
-    GroundTruthBuilder().run()
+	Window.maximize() # Just work in windows?
+	GroundTruthBuilder().run()
