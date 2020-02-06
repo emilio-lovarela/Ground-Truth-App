@@ -1,7 +1,8 @@
 <LinePlay>:
 	image_car: image1
 	slider_max: slimax
-	orientation: 'horizontal'
+	anla_ya: anlaya
+	orientation: 'tb-rl'
 
     canvas:
         Color:
@@ -10,6 +11,26 @@
         Rectangle:
         	size: self.size
         	pos: self.pos
+
+    AnchorLayout:
+    	id: anlaya
+		size_hint: .7, 1
+        pos: self.pos
+	    
+	    Image:
+	    	id: image1
+	    	source: root.img
+	    	size_hint: None, None
+	    	size: 522, 962
+	    	allow_stretch: True
+        	keep_ratio: True
+
+	    	canvas.after:
+		        Color:
+        			rgba: 1, 1, 1, root.alpha_controlline
+		        Line:
+		            points: root.points
+		            close: root.close
 
     BoxLayout:
     	orientation: 'vertical'
@@ -32,7 +53,7 @@
 		    pos: self.pos
 		
 			PopupButton:
-				text: 'Select Image Folder'
+				text: 'Select Folder'
 				size_hint: .8, 1
 				pos_hint: {'center_x': .58, 'center_y': .55}
 				font_size: 30
@@ -60,6 +81,8 @@
 	            on_value: root.canvas.remove_group('Lines')
 	            on_value: root.tex_control = ""
 	            on_value: Tog.state = 'normal'
+	            on_value: root.ori_size = image1.size
+	            on_value: anlaya.do_layout()
 		    	min: 0
 		    	max: root.LImages
 		    	step: 1
@@ -98,7 +121,7 @@
 	        	size_hint: 1, 1
 	            text: 'Save mask'
 	            disabled: root.disa
-	            on_press: root.save_image(image1.size, image1.pos)
+	            on_press: root.save_image()
 	            on_press: root.tex_control = "Image saved!"
 
 	        Label:
@@ -111,20 +134,3 @@
 	            text: 'New contour'
 	            on_press: root.new_line()
 	            on_press: Tog.state = 'normal'
-
-	AnchorLayout:
-		size_hint: 1, 1
-        pos: self.pos
-
-	    Image:
-	    	id: image1
-	    	source: root.img
-	    	size_hint: None, None
-	    	size: 522, 962
-
-	    	canvas.after:
-		        Color:
-        			rgba: 1, 1, 1, root.alpha_controlline
-		        Line:
-		            points: root.points
-		            close: root.close
