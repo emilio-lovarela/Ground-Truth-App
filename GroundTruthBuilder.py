@@ -265,8 +265,7 @@ class LinePlay(StackLayout):
 			return
 
 		# Final point list
-		if self.close == True:
-			self.points.append(self.points[0])
+		self.points.append(self.points[0])
 		
 		self.final_points.append(self.points)
 		self.points = []
@@ -286,7 +285,6 @@ class LinePlay(StackLayout):
 		copy = self.zoom_val
 		if copy > 0:
 			for val in range(0, copy):
-				print(self.x_factor, self.y_factor)
 				self.zoom_out()
 		elif copy < 0:
 			for val in range(0, abs(copy)):
@@ -299,16 +297,14 @@ class LinePlay(StackLayout):
 		# Drawing lines
 		if not self.lpoints or len(self.lpoints) == 1:
 			for i in self.final_lpoints:
-				draw.line(i, fill="White", width=1)
+				draw.polygon(i, fill="White", outline='white')
 		else:
 			for i in self.final_lpoints:
-				draw.line(i, fill="White", width=1)
+				draw.polygon(i, fill="White", outline='white')
 
 			# Close line
-			if self.close == True:
-				draw.line(self.lpoints + [self.lpoints[0]], fill="White", width=1)
-			else:
-				draw.line(self.lpoints, fill="White", width=1)
+			self.lpoints = self.lpoints + [self.lpoints[0]]
+			draw.polygon(self.lpoints, fill="White", outline='white')
 
 		# Saved final image in mask folder
 		filename = self.img.replace(self.img[self.img.rfind("/"): ], "/masks")
@@ -321,9 +317,10 @@ class LinePlay(StackLayout):
 		filename = filename.replace(".jpg", "_mask.jpg").replace(".BMP", "_mask.BMP").replace(".png", "_mask.png").replace(".tiff", "_mask.tiff")
 		final_image.save(filename)
 
-		# Reiniciate zoom_val
+		# Reiniciate zoom_val and seeds
 		self.zoom_val = 0
-
+		self.close = True
+		self.tog_bu.state = "down"
 
 class GroundTruthBuilder(App):
 	def build(self):
