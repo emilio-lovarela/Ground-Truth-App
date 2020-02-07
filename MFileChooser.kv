@@ -1,5 +1,4 @@
 <MFileChooser>:
-	idtxt: id_txt
 	id:pop
 	size_hint: .8, .8
     # auto_dismiss: False
@@ -31,23 +30,23 @@
 	    		size_hint: 0.3, .5
 	    		pos_hint: {'center_x': .8, 'center_y': .5}
 	    		text: "Select current folder"
+	    		color: 1,1,0,1
 	    		disabled: False if root.is_not_dir(FileCho.files) == True else True
 	    		on_press: root.path = FileCho.path
 	    		on_press: root.Invalid_Path = ''
 	    		on_press: pop.dismiss()
 
-	    	TextInput:
-	    		id: id_txt
-	    		size_hint: 0.3, .5
-	    		pos_hint: {'center_x': .32, 'center_y': .5}
-	    		hint_text:'Enter Path: "/" to restart'
-	    		multiline: False
-	    		on_text_validate: root.path_exist(self.text)
+	    	Button:
+	    		text: "Set Folder as Root"
+	    		size_hint: 0.25, .5
+	    		pos_hint: {'center_x': .15, 'center_y': .5}
+	    		on_press: root.path_exist(FileCho.path)
 
-	    	Label:
-	    		text: "Set Home: "
-	    		size_hint: 0.3, .5
-	    		pos_hint: {'center_x': .1, 'center_y': .55}
+	    	Button:
+	    		text: "Default Root"
+	    		size_hint: 0.18, .5
+	    		pos_hint: {'center_x': .38, 'center_y': .5}
+	    		on_press: root.path_exist("/")
 
 	    	Label:
 	    		text: root.Invalid_Path

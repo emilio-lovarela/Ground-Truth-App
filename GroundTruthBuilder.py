@@ -73,6 +73,7 @@ class LinePlay(StackLayout):
 				im_size = Image.open(self.img)
 				self.image_car.size = im_size.size
 				self.disa = False
+				self.tex_control = ""
 
 				# Reiniciate factors
 				self.x_factor = 0
@@ -108,6 +109,7 @@ class LinePlay(StackLayout):
 				return True
 
 		# Grab Clicks
+		self.tex_control = ""
 		touch.grab(self)
 		self.points.append(touch.pos)
 		return True

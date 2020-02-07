@@ -108,6 +108,7 @@
 	            text: 'Clear'
 	            on_press: root.points = []
 	            on_press: root.lpoints = []
+	            on_press: root.tex_control = ""
 
 	    	Button:
 	    		size_hint: 1, 1
@@ -117,10 +118,18 @@
 	            on_press: root.canvas.remove_group('Lines')
 	            on_press: root.points = []
 	            on_press: root.lpoints = []
+	            on_press: root.tex_control = ""
+
+	        Button:
+	    		size_hint: 1, 1
+	            text: 'Remove Last'
+	            color: 1,0,0,1
+	            on_press: None if not root.points else root.points.pop()
 
 	        Button:
 	        	size_hint: 1, 1
 	            text: 'Save mask'
+	            color: 0,1,1,1
 	            disabled: root.disa
 	            on_press: root.save_image()
 	            on_press: root.tex_control = "Image saved!"

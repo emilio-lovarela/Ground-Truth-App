@@ -15,7 +15,6 @@ class MFileChooser(Popup):
 	path = StringProperty('')
 	RootPath = StringProperty('')
 	Invalid_Path = StringProperty('')
-	idtxt = ObjectProperty()
 	store = JsonStore('RootPath.json')
 
 	def __init__(self):
@@ -42,7 +41,6 @@ class MFileChooser(Popup):
 			# Update RootPath
 			self.RootPath = file_path
 			self.Invalid_Path = "Root Changed!"
-			self.idtxt.text = ''
 
 class PopupButton(Button):
 
