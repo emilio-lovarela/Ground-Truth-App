@@ -3,6 +3,7 @@
 	slider_max: slimax
 	anla_ya: anlaya
 	tog_bu: Tog
+	switchid: switch
 	orientation: 'tb-rl'
 
     canvas:
@@ -67,6 +68,13 @@
 			size_hint: 1, 1
 		    pos: self.pos
 		
+		    Label:
+		        text: 'Filter used images'
+		    Switch:
+		        id: switch
+		        disabled: True
+		        on_active: root.filter_images(switch.active)
+
 			Label:
 				text: 'Change Image'
 
@@ -74,13 +82,13 @@
 		    	id: slimax
 		    	# Reiniciate all to default
 		    	value: 0
+		    	on_value: root.tex_control = ""
 		    	on_value: root.changeimage(self.value)
 		    	on_value: root.points = []
 	            on_value: root.lpoints = []
 	            on_value: root.final_points = []
 	            on_value: root.final_lpoints = []
 	            on_value: root.canvas.remove_group('Lines')
-	            on_value: root.tex_control = ""
 	            on_value: Tog.state = 'normal'
 	            on_value: root.ori_size = image1.size
 	            on_value: anlaya.do_layout()

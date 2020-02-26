@@ -1,5 +1,5 @@
 images/
-masks/
+images_masks/
 __pycache__/
-DMAE2V3CUB_003.jpg
+Instrucctions.jpg
 RootPath.json

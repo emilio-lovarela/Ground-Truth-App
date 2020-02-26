@@ -19,6 +19,9 @@ Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 class LinePlay(StackLayout):
 
 	path = ''
+	default_path = os.getcwd()
+	default_path = default_path.replace("\\", "/", 10) + "\\" "Instrucctions.jpg"
+
 	# General Properties
 	obj = MFileChooser()
 	lis = [] # Control changes in path
@@ -33,7 +36,9 @@ class LinePlay(StackLayout):
 
 	# Images list names
 	images = glob.glob(path + '*.jpg') + glob.glob(path + '*.png')
+	lista_ima = "" # To filter used images
 	LImages = len(images) - 1
+	filter_boolean = False
 	img = StringProperty(images[0])
 	image_car = ObjectProperty() # Extract relative positions
 
@@ -74,26 +79,68 @@ class LinePlay(StackLayout):
 				self.image_car.size = im_size.size
 				self.disa = False
 				self.tex_control = ""
+				self.switchid.disabled = False
 
 				# Reiniciate factors
 				self.x_factor = 0
 				self.y_factor = 0
 				self.ori_size = self.image_car.size
 				self.zoom_val = 0
+				self.switchid.active = False
+				self.filter_boolean = False
 
 			self.lis.pop(0)
 
 	def changeimage(self, value):
 		self.close = False # Reiniciate close line
-		self.img = self.images[int(value)]
-		im_size = Image.open(self.img)
-		self.image_car.size = im_size.size
+		if len(self.images) < 1:
+			self.img = self.default_path
+			im_size = Image.open(self.default_path)
+			self.image_car.size = im_size.size
+			self.tex_control = " All Images have masks!"
+			self.disa = True
+		else:
+			self.img = self.images[int(value)]
+			im_size = Image.open(self.img)
+			self.image_car.size = im_size.size
 
 		# Reiniciate factors
 		self.x_factor = 0
 		self.y_factor = 0
 		self.zoom_val = 0
 
+		# Check if filter is actived
+		if self.filter_boolean == True:
+			self.filter_boolean = False # Reiniciate default state
+			valu = self.slider_max.value
+			self.filter_images(True)
+			self.slider_max.value = valu
+
+	# Functions to filter used images in dir
+	def filter_type(self, image):
+		if image.replace(image[image.rfind("."):], "_mask" + image[image.rfind("."):])[image.rfind("\\") + 1: ] not in self.lista_ima:
+			return True
+
+	def filter_images(self, state):
+		if os.path.exists(self.obj.path + "_masks"):
+			if state == True:
+				self.lista_ima = os.listdir(self.obj.path + "_masks")
+				self.images = list(filter(self.filter_type, self.images))
+			else:
+				new_path = self.obj.path.replace(os.path.sep, '/') + "/"
+				self.images = glob.glob(new_path + '*.jpg') + glob.glob(new_path + '*.png') + glob.glob(new_path + '*.BMP') + glob.glob(new_path + '*.tiff')
+				self.filter_boolean = False # Reiniciate default state
+				self.disa = False
+		else:
+			self.tex_control = " No masks!"
+			self.switchid.active = False
+			return
+
+		# Reiniciate slider values
+		self.slider_max.max = len(self.images) - 1
+		self.slider_max.value = 0
+
+	# Handle touchs
 	def on_touch_down(self, touch):
 		if super(LinePlay, self).on_touch_down(touch):
 			return True
@@ -141,7 +188,11 @@ class LinePlay(StackLayout):
 		elif keycode[1] == 'right':
 			# Change to next image
 			if self.slider_max.value < self.slider_max.max:
-				self.slider_max.value += 1 
+				if self.filter_boolean == False:
+					self.slider_max.value += 1
+				else:
+					self.slider_max.value -= 1
+					self.slider_max.value += 1
 		elif keycode[1] == 'left':
 			# Change to before image
 			if self.slider_max.value > self.slider_max.min:
@@ -309,7 +360,7 @@ class LinePlay(StackLayout):
 			draw.polygon(self.lpoints, fill="White", outline='white')
 
 		# Saved final image in mask folder
-		filename = self.img.replace(self.img[self.img.rfind("/"): ], "/masks")
+		filename = self.img.replace(self.img[self.img.rfind("\\"): ], "_masks")
 		
 		# Create folder to save masks if doesnt exist
 		if not os.path.exists(filename):
@@ -324,11 +375,15 @@ class LinePlay(StackLayout):
 		self.close = True
 		self.tog_bu.state = "down"
 
+		# Check if filter is actived
+		if self.switchid.active == True:
+			self.filter_boolean = True
+
 class GroundTruthBuilder(App):
 	def build(self):
 		return LinePlay()
 
 
 if __name__ == '__main__':
-	# Window.maximize() # Just work in windows?
+	Window.maximize() # Just work in windows?
 	GroundTruthBuilder().run()
