@@ -185,7 +185,7 @@ class LinePlay(StackLayout):
 			self.zoom_in()
 		elif keycode[1] == 'down':
 			self.zoom_out()
-		elif keycode[1] == 'right':
+		elif keycode[1] == 'right' or keycode[1] == "e":
 			# Change to next image
 			if self.slider_max.value < self.slider_max.max:
 				if self.filter_boolean == False:
@@ -193,7 +193,7 @@ class LinePlay(StackLayout):
 				else:
 					self.slider_max.value -= 1
 					self.slider_max.value += 1
-		elif keycode[1] == 'left':
+		elif keycode[1] == 'left' or keycode[1] == "q":
 			# Change to before image
 			if self.slider_max.value > self.slider_max.min:
 				self.slider_max.value -= 1
