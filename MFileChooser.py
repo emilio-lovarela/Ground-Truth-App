@@ -21,7 +21,8 @@ class MFileChooser(Popup):
 		super(MFileChooser, self).__init__()
 		# Load Rootpath if exists
 		if self.store.exists('RootPath'):
-			self.RootPath = self.store.get('RootPath')['Path']
+			if exists(self.store.get('RootPath')['Path']) == True:
+				self.RootPath = self.store.get('RootPath')['Path']
 
 	def is_not_dir(self, files):
 		# Method for filter files/folders

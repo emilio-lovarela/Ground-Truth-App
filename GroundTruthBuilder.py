@@ -118,7 +118,7 @@ class LinePlay(StackLayout):
 
 	# Functions to filter used images in dir
 	def filter_type(self, image):
-		if image.replace(image[image.rfind("."):], "_mask" + image[image.rfind("."):])[image.rfind("\\") + 1: ] not in self.lista_ima:
+		if image.replace(image[image.rfind("."):], "_mask.png")[image.rfind("\\") + 1: ] not in self.lista_ima:
 			return True
 
 	def filter_images(self, state):
@@ -350,14 +350,14 @@ class LinePlay(StackLayout):
 		# Drawing lines
 		if not self.lpoints or len(self.lpoints) == 1:
 			for i in self.final_lpoints:
-				draw.polygon(i, fill="White", outline='white')
+				draw.polygon(i, fill=(255,255,255), outline=(255,255,255))
 		else:
 			for i in self.final_lpoints:
-				draw.polygon(i, fill="White", outline='white')
+				draw.polygon(i, fill=(255,255,255), outline=(255,255,255))
 
 			# Close line
 			self.lpoints = self.lpoints + [self.lpoints[0]]
-			draw.polygon(self.lpoints, fill="White", outline='white')
+			draw.polygon(self.lpoints, fill=(255,255,255), outline=(255,255,255))
 
 		# Saved final image in mask folder
 		filename = self.img.replace(self.img[self.img.rfind("\\"): ], "_masks")
@@ -367,7 +367,7 @@ class LinePlay(StackLayout):
 			os.makedirs(filename)
 
 		filename = filename + self.img[self.img.find("\\"): ]
-		filename = filename.replace(".jpg", "_mask.jpg").replace(".BMP", "_mask.BMP").replace(".png", "_mask.png").replace(".tiff", "_mask.tiff")
+		filename = filename.replace(".png", "_mask.png").replace(".jpg", "_mask.png").replace(".BMP", "_mask.png").replace(".tiff", "_mask.png")
 		final_image.save(filename)
 
 		# Reiniciate zoom_val and seeds
