@@ -1,14 +1,17 @@
 import glob, os
 from PIL import Image, ImageDraw
+from io import BytesIO
 from kivy.app import App
 from kivy.properties import NumericProperty, ListProperty, \
 		BooleanProperty, StringProperty, ObjectProperty
 from kivy.uix.stacklayout import StackLayout
+from kivy.uix.image import CoreImage
 from kivy.lang import Builder
 from kivy.graphics import Line
 from kivy.config import Config
 from kivy.core.window import Window # Just in windows?
-from MFileChooser import MFileChooser, PopupButton
+from MFileChooser import MFileChooser
+from Image_formats import Compress_image
 
 from kivy.event import EventDispatcher
 from kivy.clock import Clock
@@ -24,7 +27,7 @@ class LinePlay(StackLayout):
 
 	# General Properties
 	obj = MFileChooser()
-	lis = [] # Control changes in path
+	path_change = '' # Control changes in path
 	
 	alpha_controlline = NumericProperty(1.0)
 	close = BooleanProperty(False)
@@ -62,14 +65,19 @@ class LinePlay(StackLayout):
 		self._keyboard.bind(on_key_down=self._on_keyboard_down)
 
 		# Iniciate Clock function
-		Clock.schedule_interval(self.update_path,.1)
+		# Clock.schedule_interval(self.update_path,.1)
+
+	# Function to Popup
+	def fire_popup(self, pops):
+		pops.bind(on_dismiss=self.update_path)
+		pops.open()
 
 	# Function called by clock to update de current path
-	def update_path(self, dt):
-		self.lis.append(self.obj.path)
-		if len(self.lis) == 2:
-			if self.lis[0] != self.lis[1]:
-				# If path change, then change images dir.
+	def update_path(self, _):
+		# If path change, then change images dir
+		if self.path_change != self.obj.path:
+			# Evaluate the 4 possibilites
+			if self.obj.cu_state == "2D":
 				new_path = self.obj.path.replace(os.path.sep, '/') + "/"
 				self.images = glob.glob(new_path + '*.jpg') + glob.glob(new_path + '*.png') + glob.glob(new_path + '*.BMP') + glob.glob(new_path + '*.tiff')
 				self.slider_max.max = len(self.images) - 1
@@ -88,8 +96,16 @@ class LinePlay(StackLayout):
 				self.zoom_val = 0
 				self.switchid.active = False
 				self.filter_boolean = False
-
-			self.lis.pop(0)
+				self.path_change = self.obj.path
+			elif self.obj.cu_state == "Volume":
+				print("biennnnn")
+			elif self.obj.cu_state == "Compress":
+				self.ima_compress = Compress_image(self.obj.path)
+				self.images = self.ima_compress.images_names
+				bytes_im = BytesIO(self.ima_compress.z_file.read(self.images[0])) # Convert img to bytes
+				filename, file_extension = os.path.splitext(self.images[0])
+				self.image_car.texture = CoreImage(bytes_im, ext=file_extension[1:]).texture
+				print(file_extension)
 
 	def changeimage(self, value):
 		self.close = False # Reiniciate close line

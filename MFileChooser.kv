@@ -1,4 +1,5 @@
 <MFileChooser>:
+	filecho: FileCho
 	id:pop
 	size_hint: .8, .8
     # auto_dismiss: False
@@ -19,8 +20,9 @@
 	    FileChooserIconView:
 	    	id: FileCho
 	    	size_hint: 1, 1
-	        filters: ["*.png", "*.jpg", "*.tiff", "*.BMP"]
+	        filters: ["*.png", "*.jpg", "*.jpeg", "*.tiff", "*.BMP", "*.nii", "*.nii.gz", "*.zip"]
 		    rootpath: root.RootPath
+		    on_submit: root.dismiss_popup_volume()
 
 	    RelativeLayout:
 	    	size_hint: 1, .2
@@ -31,10 +33,8 @@
 	    		pos_hint: {'center_x': .8, 'center_y': .5}
 	    		text: "Select current folder"
 	    		color: 1,1,0,1
-	    		disabled: False if root.is_not_dir(FileCho.files) == True else True
-	    		on_press: root.path = FileCho.path
-	    		on_press: root.Invalid_Path = ''
-	    		on_press: pop.dismiss()
+	    		disabled: False if ([True for file in FileCho.files if file.lower().endswith(('.png', '.jpg', '.jpeg', "*.tiff", "*.BMP")) == True]) else True
+	    		on_press: root.dismiss_popup_images()
 
 	    	Button:
 	    		text: "Set Folder as Root"

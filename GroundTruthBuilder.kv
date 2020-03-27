@@ -54,13 +54,13 @@
 			size_hint: 1, .1
 		    pos: self.pos
 		
-			PopupButton:
+			Button:
 				text: 'Select Folder'
 				size_hint: .8, 1
 				pos_hint: {'center_x': .58, 'center_y': .55}
 				font_size: 30
 				color: 1,1,0,1
-				on_press: self.fire_popup(root.obj)
+				on_press: root.fire_popup(root.obj)
 
 	    GridLayout:
 	    	orientation: 'vertical'

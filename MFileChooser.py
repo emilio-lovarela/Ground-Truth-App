@@ -16,6 +16,7 @@ class MFileChooser(Popup):
 	RootPath = StringProperty('')
 	Invalid_Path = StringProperty('')
 	store = JsonStore('RootPath.json')
+	cu_state = "" # Possibilities 2D, Volume, Video, Compress
 
 	def __init__(self):
 		super(MFileChooser, self).__init__()
@@ -43,7 +44,22 @@ class MFileChooser(Popup):
 			self.RootPath = file_path
 			self.Invalid_Path = "Root Changed!"
 
-class PopupButton(Button):
+	# Return path with 2d images format
+	def dismiss_popup_images(self):
+		self.path = self.filecho.path
+		self.Invalid_Path = ''
+		self.cu_state = "2D"
+		self.dismiss()
 
-	def fire_popup(self, pops):
-		pops.open()
+	# Return volume or compress file
+	def dismiss_popup_volume(self):
+		if self.filecho.selection[0].lower().endswith(('.nii', '.nii.gz')) == True:
+			self.path = self.filecho.selection[0]
+			self.Invalid_Path = ''
+			self.cu_state = "Volume"
+			self.dismiss()
+		elif self.filecho.selection[0].lower().endswith(('.zip')) == True:
+			self.path = self.filecho.selection[0]
+			self.Invalid_Path = ''
+			self.cu_state = "Compress"
+			self.dismiss()
