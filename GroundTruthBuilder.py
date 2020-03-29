@@ -1,6 +1,8 @@
 import glob, os
+import pathlib
 from PIL import Image, ImageDraw
 from io import BytesIO
+from zipfile import ZipFile, ZIP_DEFLATED
 from kivy.app import App
 from kivy.properties import NumericProperty, ListProperty, \
 		BooleanProperty, StringProperty, ObjectProperty
@@ -11,7 +13,8 @@ from kivy.graphics import Line
 from kivy.config import Config
 from kivy.core.window import Window # Just in windows?
 from MFileChooser import MFileChooser
-from Image_formats import Compress_image
+from Image_formats import Compress_image, Volume_image
+from Color_palette import color_palette
 
 from kivy.event import EventDispatcher
 from kivy.clock import Clock
@@ -29,7 +32,8 @@ class LinePlay(StackLayout):
 	obj = MFileChooser()
 	path_change = '' # Control changes in path
 	
-	alpha_controlline = NumericProperty(1.0)
+	vol_dimension = BooleanProperty(True)
+	max_dime = NumericProperty(1)
 	close = BooleanProperty(False)
 	disa = BooleanProperty(True)
 	points = ListProperty([])
@@ -43,6 +47,7 @@ class LinePlay(StackLayout):
 	LImages = len(images) - 1
 	filter_boolean = False
 	img = StringProperty(images[0])
+	file_name = StringProperty(os.path.basename(images[0]))
 	image_car = ObjectProperty() # Extract relative positions
 
 	# Text vanish
@@ -77,48 +82,95 @@ class LinePlay(StackLayout):
 		# If path change, then change images dir
 		if self.path_change != self.obj.path:
 			# Evaluate the 4 possibilites
-			if self.obj.cu_state == "2D":
+			if self.obj.cu_state == "2D": # 2D images in a folder
 				new_path = self.obj.path.replace(os.path.sep, '/') + "/"
-				self.images = glob.glob(new_path + '*.jpg') + glob.glob(new_path + '*.png') + glob.glob(new_path + '*.BMP') + glob.glob(new_path + '*.tiff')
-				self.slider_max.max = len(self.images) - 1
-				self.slider_max.value = 0
+				self.images = glob.glob(new_path + '*.jpg') + glob.glob(new_path + '*.png') + glob.glob(new_path + '*.BMP') + glob.glob(new_path + '*.tiff') + glob.glob(new_path + '*.tif') + glob.glob(new_path + '*.jfif') + glob.glob(new_path + '*.jpge')
 				self.img = self.images[0]
-				im_size = Image.open(self.img)
-				self.image_car.size = im_size.size
-				self.disa = False
-				self.tex_control = ""
-				self.switchid.disabled = False
 
-				# Reiniciate factors
-				self.x_factor = 0
-				self.y_factor = 0
-				self.ori_size = self.image_car.size
-				self.zoom_val = 0
-				self.switchid.active = False
-				self.filter_boolean = False
-				self.path_change = self.obj.path
-			elif self.obj.cu_state == "Volume":
-				print("biennnnn")
-			elif self.obj.cu_state == "Compress":
+				# Filename and extension
+				# self.file_name = os.path.basename(self.img)
+				self.file_name, self.extension = os.path.splitext(os.path.basename(self.img))
+				self.image_car.size = Image.open(self.img).size
+				self.vol_dimension = True
+			elif self.obj.cu_state == "Volume": # .nii or .nii.gz volume
+				self.ima_volume = Volume_image(self.obj.path)
+				self.vol_dimension = self.ima_volume.dimension
+				self.max_dime = self.ima_volume.max_dime
+				self.image_car.texture = self.ima_volume.texture
+				self.images = [x for x in range(self.ima_volume.lenght)] # Create slice list numeration
+				self.image_car.size = self.ima_volume.size
+
+				# Filename and extension
+				vol_name, self.extension = os.path.splitext(os.path.basename(self.obj.path))
+				self.vol_name, extension = os.path.splitext(vol_name)
+				self.extension = extension + self.extension
+
+				# Update filename with correct dimensions code
+				if self.vol_dimension == True:
+					self.file_name = self.vol_name + "_" + str(0)
+				else:
+					self.file_name = self.vol_name + "_" + str(0) + "_" + str(0)
+			elif self.obj.cu_state == "Compress": # zip 2D files
 				self.ima_compress = Compress_image(self.obj.path)
 				self.images = self.ima_compress.images_names
-				bytes_im = BytesIO(self.ima_compress.z_file.read(self.images[0])) # Convert img to bytes
-				filename, file_extension = os.path.splitext(self.images[0])
-				self.image_car.texture = CoreImage(bytes_im, ext=file_extension[1:]).texture
-				print(file_extension)
+				bytes_im = BytesIO(self.ima_compress.z_file.read(self.images[0])) # Convert img into bytes
+				
+				# Filename and extension
+				self.file_name, self.extension = os.path.splitext(os.path.basename(self.images[0]))
+				self.zip_name, _ = os.path.splitext(self.images[0])
+				self.image_car.texture = CoreImage(bytes_im, ext=self.extension[1:].lower()).texture
+				self.image_car.size = Image.open(bytes_im).size
+				self.vol_dimension = True
 
-	def changeimage(self, value):
+			# Common factors
+			self.slider_max.max = len(self.images) - 1
+			self.slider_max.value = 0
+			self.disa = False
+			self.tex_control = ""
+			self.switchid.disabled = False
+
+			# Reiniciate factors
+			self.x_factor = 0
+			self.y_factor = 0
+			self.ori_size = self.image_car.size
+			self.zoom_val = 0
+			self.switchid.active = False
+			self.filter_boolean = False
+			self.path_change = self.obj.path
+
+	def changeimage(self, value, value2):
 		self.close = False # Reiniciate close line
 		if len(self.images) < 1:
 			self.img = self.default_path
+			self.file_name = os.path.basename(self.default_path)
 			im_size = Image.open(self.default_path)
 			self.image_car.size = im_size.size
 			self.tex_control = " All Images have masks!"
 			self.disa = True
 		else:
-			self.img = self.images[int(value)]
-			im_size = Image.open(self.img)
-			self.image_car.size = im_size.size
+			# Evaluate the 4 possibilities
+			if self.obj.cu_state == "2D":
+				self.img = self.images[int(value)]
+				self.file_name, self.extension = os.path.splitext(os.path.basename(self.img))
+				im_size = Image.open(self.img)
+				self.image_car.size = im_size.size
+			elif self.obj.cu_state == "Compress":
+				bytes_im = BytesIO(self.ima_compress.z_file.read(self.images[int(value)])) # Convert img into bytes
+				self.file_name, self.extension = os.path.splitext(os.path.basename(self.images[int(value)]))
+				self.zip_name, _ = os.path.splitext(self.images[int(value)])
+				self.image_car.texture = CoreImage(bytes_im, ext=self.extension[1:].lower()).texture
+				self.image_car.size = Image.open(bytes_im).size
+			elif self.obj.cu_state == "Volume":
+				self.ima_volume.change_slice(int(value), int(value2)) # change the slice position
+				self.image_car.texture = self.ima_volume.texture
+				self.image_car.size = self.ima_volume.size
+
+				# Update filename with correct dimensions code
+				if self.vol_dimension == True:
+					self.file_name = self.vol_name + "_" + str(int(value))
+				else:
+					self.file_name = self.vol_name + "_" + str(int(value)) + "_" + str(int(value2))
+					self.max_dime = self.ima_volume.max_dime
 
 		# Reiniciate factors
 		self.x_factor = 0
@@ -347,7 +399,10 @@ class LinePlay(StackLayout):
 	def save_image(self):
 
 		# Generated mask
-		final_image = Image.new("RGB", [int(round(self.ori_size[0])),int(round(self.ori_size[1]))])
+		final_image = Image.new("P", [int(round(self.ori_size[0])),int(round(self.ori_size[1]))])
+		
+		# Activate color_palette
+		final_image.putpalette(color_palette)
 		draw = ImageDraw.Draw(final_image)
 
 		# Updating image to default position
@@ -366,25 +421,35 @@ class LinePlay(StackLayout):
 		# Drawing lines
 		if not self.lpoints or len(self.lpoints) == 1:
 			for i in self.final_lpoints:
-				draw.polygon(i, fill=(255,255,255), outline=(255,255,255))
+				# draw.polygon(i, fill=(255,255,255), outline=(255,255,255))
+				draw.polygon(i, fill=16, outline=16)
 		else:
 			for i in self.final_lpoints:
-				draw.polygon(i, fill=(255,255,255), outline=(255,255,255))
+				# draw.polygon(i, fill=(255,255,255), outline=(255,255,255))
+				draw.polygon(i, fill=16, outline=16)
 
 			# Close line
 			self.lpoints = self.lpoints + [self.lpoints[0]]
-			draw.polygon(self.lpoints, fill=(255,255,255), outline=(255,255,255))
+			# draw.polygon(self.lpoints, fill=(255,255,255), outline=(255,255,255))
+			draw.polygon(self.lpoints, fill=16, outline=16)
 
 		# Saved final image in mask folder
-		filename = self.img.replace(self.img[self.img.rfind("\\"): ], "_masks")
-		
-		# Create folder to save masks if doesnt exist
-		if not os.path.exists(filename):
-			os.makedirs(filename)
+		if self.obj.cu_state == "2D":
+			folder_path = self.obj.path + "_masks"
+			final_path = folder_path + "/" + self.file_name + "_mask.png"
+		else:
+			folder_path = os.path.dirname(self.obj.path) + "_masks"
 
-		filename = filename + self.img[self.img.find("\\"): ]
-		filename = filename.replace(".png", "_mask.png").replace(".jpg", "_mask.png").replace(".BMP", "_mask.png").replace(".tiff", "_mask.png")
-		final_image.save(filename)
+			if self.obj.cu_state == "Volume": # Save in new volume folder
+				folder_path = folder_path + "/" + os.path.basename(self.obj.path.replace(self.extension, ""))
+				final_path = folder_path + "/" + self.file_name + "_mask.png"
+			else:
+				final_path = folder_path + "/" + os.path.basename(self.obj.path.replace(".zip", "")) + "/" + self.zip_name + "_mask.png"
+				folder_path = os.path.dirname(final_path)
+
+		# Save mask in folder. Create folder if doenst exists
+		pathlib.Path(folder_path).mkdir(parents=True, exist_ok=True)
+		final_image.save(final_path)
 
 		# Reiniciate zoom_val and seeds
 		self.zoom_val = 0

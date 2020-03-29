@@ -7,6 +7,7 @@ from kivy.properties import StringProperty, ObjectProperty
 from kivy.uix.textinput import TextInput
 
 from os.path import isdir, exists, isfile
+from zipfile import ZipFile
 
 Builder.load_file("MFileChooser.kv")
 
@@ -53,13 +54,25 @@ class MFileChooser(Popup):
 
 	# Return volume or compress file
 	def dismiss_popup_volume(self):
-		if self.filecho.selection[0].lower().endswith(('.nii', '.nii.gz')) == True:
-			self.path = self.filecho.selection[0]
-			self.Invalid_Path = ''
-			self.cu_state = "Volume"
-			self.dismiss()
-		elif self.filecho.selection[0].lower().endswith(('.zip')) == True:
-			self.path = self.filecho.selection[0]
-			self.Invalid_Path = ''
-			self.cu_state = "Compress"
-			self.dismiss()
+		# Handle empty list error
+		if self.filecho.selection:
+			if self.filecho.selection[0].lower().endswith(('.nii', '.nii.gz')) == True:
+				self.path = self.filecho.selection[0]
+				self.Invalid_Path = ''
+				self.cu_state = "Volume"
+				self.dismiss()
+			elif self.filecho.selection[0].lower().endswith(('.zip')) == True:
+
+				# Check if images in file
+				z_file = ZipFile(self.filecho.selection[0], mode="r")
+				name_li = ZipFile.namelist(z_file)
+				images_names = [i for i in name_li if i.lower().endswith(('.png', '.jpg', '.jpeg', '*.jfif', ".tiff", ".tif", ".bmp"))] # Filter list of images
+				z_file.close()
+
+				if images_names: # Update information
+					self.path = self.filecho.selection[0]
+					self.Invalid_Path = ''
+					self.cu_state = "Compress"
+					self.dismiss()
+				else:
+					self.Invalid_Path = 'No images in Zip!'
