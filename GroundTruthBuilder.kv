@@ -29,7 +29,7 @@
 
 	    	canvas.after:
 		        Color:
-        			rgba: 1, 1, 1, 1
+        			rgba: root.r_cha, root.g_cha, root.b_cha, 1
 		        Line:
 		            points: root.points
 		            close: root.close
@@ -60,7 +60,7 @@
 				pos_hint: {'center_x': .58, 'center_y': .55}
 				font_size: 30
 				color: 1,1,0,1
-				on_press: root.fire_popup(root.obj)
+				on_press: root.fire_popup(root.obj, True)
 
 	    GridLayout:
 	    	orientation: 'vertical'
@@ -97,7 +97,7 @@
 		    	step: 1
 
 		    Label:
-	            text: 'Change 4 dimension'
+	            text: '4 dimension'
 	            disabled: root.vol_dimension
 	            
 	        Slider:
@@ -129,6 +129,7 @@
 	            on_press: root.canvas.remove_group('Lines')
 	            on_press: root.points = []
 	            on_press: root.lpoints = []
+	            on_press: root.colors_lis = []
 	            on_press: root.tex_control = ""
 
 	        Button:
@@ -155,3 +156,15 @@
 	            text: 'New contour'
 	            on_press: root.new_line()
 	            on_press: Tog.state = 'normal'
+
+	        Button:
+				size_hint: 1, 1
+	            text: 'New instance'
+	            on_press: root.new_instance()
+	            on_press: Tog.state = 'normal'
+
+	        Button:
+				size_hint: 1, 1
+	            text: 'Change class'
+	            on_press: root.fire_popup(root.change_class, False)
+	            on_press: root.write_mode = True

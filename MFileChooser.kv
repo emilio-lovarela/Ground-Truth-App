@@ -55,5 +55,128 @@
 	    		pos_hint: {'center_x': .56, 'center_y': .55}
 	    		color: 1,0,0,1
 
-<PopupButton>:
-	size_hint: 1,1
+<ChangeClass>:
+	id: general
+	background_color: (0, 0, 0, 0.1)
+	size_hint: .3,.8
+	pos_hint: {'center_x': .15, 'center_y': .5}
+	title: "Select Class"
+	title_align: "center"
+	title_size: 30
+	title_color: [0,1,0,1]
+
+	BoxLayout:
+		orientation: 'vertical'
+
+		Label:
+			size_hint: 1, .15
+			text: root.class_name
+			halign: "center"
+			valign: "top"
+			font_size: 18
+			color: tuple(root.class_color)
+
+		ScrollView:
+		    do_scroll_x: False
+		    bar_width: 3
+            effect_cls: "ScrollEffect"
+
+			StackLayout:
+				orientation: 'lr-tb'
+				spacing: [30,10]
+				size_hint_y: None
+				height: self.minimum_height
+				id:grid
+
+		Label:
+			size_hint: 1, .1
+			text: root.advice
+			text_size: self.size
+			valign: "middle"
+			font_size: 20
+			color: 1,0,0,1
+
+		Label:
+			markup: True
+			size_hint: 1, .1
+			text: "[color=#ff4000]Class filter: [/color]" + root.keycode
+			text_size: self.size
+			valign: "middle"
+			font_size: 18
+			color: 1,0,1,1
+
+		RelativeLayout:
+	    	size_hint: 1, .2
+	    	orientation: 'horizontal'
+
+	    	Button:
+	    		id: aply
+	    		size_hint: 0.34, .5
+	    		pos_hint: {'center_x': .16, 'center_y': .5}
+	    		text: "New Class"
+	    		color: 0,1,0,1
+	    		on_press: root.new_class()
+
+	    	ToggleButton:
+	    		allow_no_selection: False
+	    		group: "mode"
+	    		size_hint: 0.1, .5
+	    		pos_hint: {'center_x': .405, 'center_y': .5}
+	    		text: "N"
+	    		color: 0,1,0,1
+	    		state: "down"
+	    		on_press: root.mode = "normal"
+	    		on_press: self.color = 0,1,0,1
+	    		on_press: aply.text = "New Class"
+	    		on_press: aply.color = 0,1,0,1
+	    		on_press: general.background_color = (0, 0, 0, 0.1)
+	    		on_press: general.auto_dismiss = True
+	    		on_press: root.block = False
+	    		on_press: root.advice = ""
+	    		on_state: self.color = 1,1,1,1
+
+	    	ToggleButton:
+	    		allow_no_selection: False
+	    		group: "mode"
+	    		size_hint: 0.1, .5
+	    		pos_hint: {'center_x': .5, 'center_y': .5}
+	    		text: "E"
+	    		color: 1,1,1,1
+	    		on_press: root.mode = "edit"
+	    		on_press: self.color = 1,1,0,1
+	    		on_press: aply.text = "Edit Class"
+	    		on_press: aply.color = 1,1,0,1
+	    		on_press: general.background_color = (1, 1, 0, 0.2)
+	    		on_press: general.auto_dismiss = False
+	    		on_press: root.advice = ""
+	    		on_state: self.color = 1,1,1,1
+
+	    	ToggleButton:
+	    		allow_no_selection: False
+	    		id: remover
+	    		group: "mode"
+	    		size_hint: 0.1, .5
+	    		pos_hint: {'center_x': .595, 'center_y': .5}
+	    		text: "R"
+	    		color: 1,1,1,1
+	    		on_press: root.mode = "remove"
+	    		on_press: self.color = 1,0,0,1
+	    		on_press: aply.text = "Del Class"
+	    		on_press: aply.color = 1,0,0,1
+	    		on_press: general.background_color = (1, 0, 0, 0.2)
+	    		on_press: general.auto_dismiss = False
+	    		on_press: root.block = False
+	    		on_press: root.advice = ""
+	    		on_press: root.current_class = ""
+	    		on_press: root.class_name = ""
+	    		on_state: self.color = 1,1,1,1
+
+	    	Button:
+	    		size_hint: 0.34, .5
+	    		pos_hint: {'center_x': .84, 'center_y': .5}
+	    		text: "Load CSV"
+	    		color: 1,1,0,1
+	    		# on_press: print(tuple(root.current_class.background_color))
+	    		# on_press: root.filter_view()
+
+	

@@ -3,24 +3,25 @@ import pathlib
 from PIL import Image, ImageDraw
 from io import BytesIO
 from zipfile import ZipFile, ZIP_DEFLATED
+from kivy.config import Config
+Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
+# Config.set('graphics','resizable',False)
+# Config.set('graphics', 'fullscreen', True)
+
 from kivy.app import App
 from kivy.properties import NumericProperty, ListProperty, \
 		BooleanProperty, StringProperty, ObjectProperty
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.image import CoreImage
 from kivy.lang import Builder
-from kivy.graphics import Line
-from kivy.config import Config
+from kivy.graphics import Line, Color
 from kivy.core.window import Window # Just in windows?
-from MFileChooser import MFileChooser
+from MFileChooser import MFileChooser, ChangeClass
 from Image_formats import Compress_image, Volume_image
 from Color_palette import color_palette
 
 from kivy.event import EventDispatcher
 from kivy.clock import Clock
-
-Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
-# Config.set('graphics', 'fullscreen', True)
 
 class LinePlay(StackLayout):
 
@@ -31,6 +32,8 @@ class LinePlay(StackLayout):
 	# General Properties
 	obj = MFileChooser()
 	path_change = '' # Control changes in path
+	change_class = ChangeClass()
+	write_mode = BooleanProperty(False)
 	
 	vol_dimension = BooleanProperty(True)
 	max_dime = NumericProperty(1)
@@ -40,6 +43,11 @@ class LinePlay(StackLayout):
 	lpoints = ListProperty([])
 	final_points = ListProperty([])
 	final_lpoints = ListProperty([])
+	colors_lis = ListProperty([])
+	r_cha = NumericProperty(1)
+	g_cha = NumericProperty(1)
+	b_cha = NumericProperty(1)
+	class_number = 1
 
 	# Images list names
 	images = glob.glob(path + '*.jpg') + glob.glob(path + '*.png')
@@ -65,7 +73,7 @@ class LinePlay(StackLayout):
 	def __init__(self, **kwargs):
 		super(LinePlay, self).__init__(**kwargs)
 
-		# Keyboard isten
+		# Keyboard listen
 		self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
 		self._keyboard.bind(on_key_down=self._on_keyboard_down)
 
@@ -73,8 +81,11 @@ class LinePlay(StackLayout):
 		# Clock.schedule_interval(self.update_path,.1)
 
 	# Function to Popup
-	def fire_popup(self, pops):
-		pops.bind(on_dismiss=self.update_path)
+	def fire_popup(self, pops, filechooser):
+		if filechooser == True:
+			pops.bind(on_dismiss=self.update_path)
+		else:
+			pops.bind(on_dismiss=self.update_class)
 		pops.open()
 
 	# Function called by clock to update de current path
@@ -88,7 +99,6 @@ class LinePlay(StackLayout):
 				self.img = self.images[0]
 
 				# Filename and extension
-				# self.file_name = os.path.basename(self.img)
 				self.file_name, self.extension = os.path.splitext(os.path.basename(self.img))
 				self.image_car.size = Image.open(self.img).size
 				self.vol_dimension = True
@@ -137,6 +147,10 @@ class LinePlay(StackLayout):
 			self.switchid.active = False
 			self.filter_boolean = False
 			self.path_change = self.obj.path
+
+	# Update class and return keyboard normal control
+	def update_class(self, _):
+		self.write_mode = False
 
 	def changeimage(self, value, value2):
 		self.close = False # Reiniciate close line
@@ -247,26 +261,30 @@ class LinePlay(StackLayout):
 		self._keyboard = None
 
 	def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
-		move_value = 40
+		if self.write_mode == False:
+			move_value = 40
 
-		if keycode[1] == 'up':
-			self.zoom_in()
-		elif keycode[1] == 'down':
-			self.zoom_out()
-		elif keycode[1] == 'right' or keycode[1] == "e":
-			# Change to next image
-			if self.slider_max.value < self.slider_max.max:
-				if self.filter_boolean == False:
-					self.slider_max.value += 1
-				else:
+			if keycode[1] == 'up':
+				self.zoom_in()
+			elif keycode[1] == 'down':
+				self.zoom_out()
+			elif keycode[1] == 'right' or keycode[1] == "e":
+				# Change to next image
+				if self.slider_max.value < self.slider_max.max:
+					if self.filter_boolean == False:
+						self.slider_max.value += 1
+					else:
+						self.slider_max.value -= 1
+						self.slider_max.value += 1
+			elif keycode[1] == 'left' or keycode[1] == "q":
+				# Change to before image
+				if self.slider_max.value > self.slider_max.min:
 					self.slider_max.value -= 1
-					self.slider_max.value += 1
-		elif keycode[1] == 'left' or keycode[1] == "q":
-			# Change to before image
-			if self.slider_max.value > self.slider_max.min:
-				self.slider_max.value -= 1
-		elif keycode[1] == 'w' or 's' or 'a' or 'd':
-			self.move_in(keycode[1])
+			elif keycode[1] == 'w' or 's' or 'a' or 'd':
+				self.move_in(keycode[1])
+		else:
+			# print(keycode[1])
+			self.change_class.keyboard_grab(keycode[1])
 
 	# Zoom in and out functions
 	def zoom_in(self):
@@ -385,6 +403,9 @@ class LinePlay(StackLayout):
 			self.close = False # Reiniciate close line
 			return
 
+		# Update color_lis
+		self.colors_lis.append(self.class_number)
+
 		# Final point list
 		self.points.append(self.points[0])
 		
@@ -392,9 +413,14 @@ class LinePlay(StackLayout):
 		self.points = []
 		self.close = False # Reiniciate close line
 
-		for i in range(0,len(self.final_points)):
+		for i in range(0,len(self.colors_lis)):
 			with self.canvas:
+				Color(color_palette[self.colors_lis[i] * 3]/255, color_palette[(self.colors_lis[i] * 3) + 1]/255, color_palette[(self.colors_lis[i] * 3) + 2]/255, 1)
 				Line(points=self.final_points[i], group='Lines')
+
+	# Put a mark to save bounding boxes
+	def new_instance(self):
+		self.new_line()
 
 	def save_image(self):
 

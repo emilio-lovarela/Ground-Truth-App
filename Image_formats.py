@@ -15,11 +15,13 @@ class Volume_image(Image):
 		# Load volume 3d or 4d and select initial image
 		self.volume_nii = nib.load(file_path)
 		if len(self.volume_nii.shape) == 3:
-			img_base = self.volume_nii.get_fdata()[:,0,:].astype(np.uint8)
+			img_base = self.volume_nii.get_fdata()[:,0,:]
+			img_base = cv2.normalize(img_base, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX).astype(np.uint8)
 			self.dimension = True
 			self.max_dime = 0
 		else:
 			img_base = self.volume_nii.get_fdata()[:,0,:,0].astype(np.uint8)
+			img_base = cv2.normalize(img_base, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX).astype(np.uint8)
 			self.dimension = False
 			self.max_dime = self.volume_nii.shape[3] - 1
 
@@ -40,9 +42,11 @@ class Volume_image(Image):
 
 	def change_slice(self, val, val2):
 		if len(self.volume_nii.shape) == 3:
-			img_base = self.volume_nii.get_fdata()[:,val,:].astype(np.uint8)
+			img_base = self.volume_nii.get_fdata()[:,val,:]
+			img_base = cv2.normalize(img_base, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX).astype(np.uint8)
 		else:
-			img_base = self.volume_nii.get_fdata()[:,val,:,val2].astype(np.uint8)
+			img_base = self.volume_nii.get_fdata()[:,val,:,val2]
+			img_base = cv2.normalize(img_base, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX).astype(np.uint8)
 
 		self.img = cv2.cvtColor(img_base, cv2.COLOR_GRAY2BGR)
 
