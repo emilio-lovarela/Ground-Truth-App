@@ -80,17 +80,42 @@ class MFileChooser(Popup):
 
 # Classes, categories (dog, cat, human...) Popup
 class ChangeClass(Popup):
-	keycode = StringProperty("")
+
+	# Variables and kivy properties
+	keycode = StringProperty("class1")
 	classes = DictProperty()
-	current_class = ObjectProperty(Button())
-	class_name = StringProperty("")
-	class_color = ListProperty([1,1,1,1])
+	current_class = ObjectProperty()
+	class_name = StringProperty("class1")
+	class_color = ListProperty([color_palette[3]/255, color_palette[4]/255, color_palette[5]/255, 1])
+	
 	advice = StringProperty("")
 	block = False
 	shift = False
-	max_num = 1
+	max_num = 2
 	not_used_num = []
 	mode = StringProperty("normal") # normal, edit, remove
+
+	# Charge default values
+	def __init__(self):
+		super(ChangeClass, self).__init__()
+
+		width = self.calculate_render_len()
+		button = Button(text=self.class_name, size_hint=(None, None), size=(width, 30), font_size=20, valign="middle")
+		
+		# Bind function to the button
+		button.bind(on_press=self.button_calback)
+
+		# Format the button
+		button.color = [0,0,0,1]
+		color_num = 1
+		button.background_normal = ""
+		button.background_color = self.class_color
+		self.ids.grid.add_widget(button)
+
+		# Classes dictionary and current class
+		self.classes[self.class_name] = 1
+		self.current_class = button
+		self.keycode = ""
 
 	# Add current class if not exist
 	def new_class(self):
@@ -206,13 +231,11 @@ class ChangeClass(Popup):
 	# Button callback function
 	def button_calback(self, instance):
 
-		# print(instance.text, self.classes.get(instance.text))
 		self.advice = ""
 		self.current_class = instance
 		self.class_name = instance.text
 		self.class_color = instance.background_color
 		if self.mode == "normal":
-			# print(instance.text, self.classes.get(instance.text))
 			self.dismiss()
 		elif self.mode == "edit":
 			self.block = True

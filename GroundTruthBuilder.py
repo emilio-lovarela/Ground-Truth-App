@@ -2,7 +2,8 @@ import glob, os
 import pathlib
 from PIL import Image, ImageDraw
 from io import BytesIO
-from zipfile import ZipFile, ZIP_DEFLATED
+from zipfile import ZipFile
+from shapely.geometry import Polygon
 from kivy.config import Config
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 # Config.set('graphics','resizable',False)
@@ -13,15 +14,11 @@ from kivy.properties import NumericProperty, ListProperty, \
 		BooleanProperty, StringProperty, ObjectProperty
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.image import CoreImage
-from kivy.lang import Builder
 from kivy.graphics import Line, Color
 from kivy.core.window import Window # Just in windows?
 from MFileChooser import MFileChooser, ChangeClass
 from Image_formats import Compress_image, Volume_image
 from Color_palette import color_palette
-
-from kivy.event import EventDispatcher
-from kivy.clock import Clock
 
 class LinePlay(StackLayout):
 
@@ -43,10 +40,12 @@ class LinePlay(StackLayout):
 	lpoints = ListProperty([])
 	final_points = ListProperty([])
 	final_lpoints = ListProperty([])
+	priority_draw = {} # Control hierarchy features
+
+	# Class variables
 	colors_lis = ListProperty([])
-	r_cha = NumericProperty(1)
-	g_cha = NumericProperty(1)
-	b_cha = NumericProperty(1)
+	class_name = StringProperty("class1")
+	class_color = ListProperty([color_palette[3]/255, color_palette[4]/255, color_palette[5]/255, 1])
 	class_number = 1
 
 	# Images list names
@@ -76,9 +75,6 @@ class LinePlay(StackLayout):
 		# Keyboard listen
 		self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
 		self._keyboard.bind(on_key_down=self._on_keyboard_down)
-
-		# Iniciate Clock function
-		# Clock.schedule_interval(self.update_path,.1)
 
 	# Function to Popup
 	def fire_popup(self, pops, filechooser):
@@ -150,6 +146,10 @@ class LinePlay(StackLayout):
 
 	# Update class and return keyboard normal control
 	def update_class(self, _):
+
+		self.class_name = self.change_class.class_name
+		self.class_color = self.change_class.class_color
+		self.class_number = self.change_class.classes.get(self.class_name)
 		self.write_mode = False
 
 	def changeimage(self, value, value2):
@@ -261,6 +261,8 @@ class LinePlay(StackLayout):
 		self._keyboard = None
 
 	def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
+
+		# Shortcuts
 		if self.write_mode == False:
 			move_value = 40
 
@@ -268,6 +270,15 @@ class LinePlay(StackLayout):
 				self.zoom_in()
 			elif keycode[1] == 'down':
 				self.zoom_out()
+			elif keycode[1] == 'r':
+				if self.points:
+					self.points.pop()
+			elif keycode[1] == 'f':
+				self.new_instance()
+				self.tog_bu.state = "normal"
+			elif keycode[1] == 'spacebar':
+				self.write_mode = True
+				self.fire_popup(self.change_class, False)
 			elif keycode[1] == 'right' or keycode[1] == "e":
 				# Change to next image
 				if self.slider_max.value < self.slider_max.max:
@@ -283,8 +294,20 @@ class LinePlay(StackLayout):
 			elif keycode[1] == 'w' or 's' or 'a' or 'd':
 				self.move_in(keycode[1])
 		else:
-			# print(keycode[1])
-			self.change_class.keyboard_grab(keycode[1])
+			if keycode[1] == 'right':
+				# Change to next image
+				if self.slider_max.value < self.slider_max.max:
+					if self.filter_boolean == False:
+						self.slider_max.value += 1
+					else:
+						self.slider_max.value -= 1
+						self.slider_max.value += 1
+			elif keycode[1] == 'left':
+				# Change to before image
+				if self.slider_max.value > self.slider_max.min:
+					self.slider_max.value -= 1
+			else:
+				self.change_class.keyboard_grab(keycode[1])
 
 	# Zoom in and out functions
 	def zoom_in(self):
@@ -299,9 +322,10 @@ class LinePlay(StackLayout):
 		self.canvas.remove_group('Lines')
 
 		# Adding new Lines
-		for i in range(0,len(self.final_points)):
+		for i, color in zip(self.final_points, self.colors_lis):
 			with self.canvas:
-				Line(points=self.final_points[i], group='Lines')
+				Color(color_palette[color * 3]/255, color_palette[(color * 3) + 1]/255, color_palette[(color * 3) + 2]/255, 1)
+				Line(points=i, group='Lines')
 
 		# Update image size and pos (Handling updated error)
 		self.image_car.pos[0] = self.image_car.pos[0] - self.image_car.size[0] / 2
@@ -329,9 +353,10 @@ class LinePlay(StackLayout):
 		self.canvas.remove_group('Lines')
 
 		# Adding new Lines
-		for i in range(0,len(self.final_points)):
+		for i, color in zip(self.final_points, self.colors_lis):
 			with self.canvas:
-				Line(points=self.final_points[i], group='Lines')
+				Color(color_palette[color * 3]/255, color_palette[(color * 3) + 1]/255, color_palette[(color * 3) + 2]/255, 1)
+				Line(points=i, group='Lines')
 
 		# Update image and pos size (Because updated error)
 		self.image_car.size[0] = self.image_car.size[0] / 2
@@ -393,9 +418,32 @@ class LinePlay(StackLayout):
 		self.canvas.remove_group('Lines')
 
 		# Adding new Lines
-		for i in range(0,len(self.final_points)):
+		for i, color in zip(self.final_points, self.colors_lis):
 			with self.canvas:
-				Line(points=self.final_points[i], group='Lines')
+				Color(color_palette[color * 3]/255, color_palette[(color * 3) + 1]/255, color_palette[(color * 3) + 2]/255, 1)
+				Line(points=i, group='Lines')
+
+	# Remove instance or contour added
+	def undo_instance(self):
+
+		# Search element position
+		try:
+			index = self.colors_lis.index(self.class_number)
+		except:
+			return
+
+		# Remove element from list and update canvas
+		del self.final_points[index]
+		del self.colors_lis[index]
+
+		# Removing painted lines
+		self.canvas.remove_group('Lines')
+
+		# Adding new Lines
+		for i, color in zip(self.final_points, self.colors_lis):
+			with self.canvas:
+				Color(color_palette[color * 3]/255, color_palette[(color * 3) + 1]/255, color_palette[(color * 3) + 2]/255, 1)
+				Line(points=i, group='Lines')
 
 	def new_line(self):
 		# Handling empty list error
@@ -403,26 +451,55 @@ class LinePlay(StackLayout):
 			self.close = False # Reiniciate close line
 			return
 
-		# Update color_lis
-		self.colors_lis.append(self.class_number)
-
 		# Final point list
 		self.points.append(self.points[0])
-		
-		self.final_points.append(self.points)
-		self.points = []
+
+		# Create points polygon
+		new_polygon = Polygon(self.points)
 		self.close = False # Reiniciate close line
 
-		for i in range(0,len(self.colors_lis)):
+		# Removing painted lines
+		self.canvas.remove_group('Lines')
+
+		# Draw new lines and insert in position
+		compro_hiera = True
+		insert_position = -1
+		for points, color, position in zip(self.final_points, self.colors_lis, range(len(self.colors_lis))):
+
+			# Insert if contour inside it
+			polyb = Polygon(points)
+			if compro_hiera == True:
+				if new_polygon.contains(polyb):
+					compro_hiera = False
+					insert_position = position
+
 			with self.canvas:
-				Color(color_palette[self.colors_lis[i] * 3]/255, color_palette[(self.colors_lis[i] * 3) + 1]/255, color_palette[(self.colors_lis[i] * 3) + 2]/255, 1)
-				Line(points=self.final_points[i], group='Lines')
+				Color(color_palette[color * 3]/255, color_palette[(color * 3) + 1]/255, color_palette[(color * 3) + 2]/255, 1)
+				Line(points=points, group='Lines')
+
+		# Insert point in final_points list
+		if compro_hiera == False:
+			self.final_points[insert_position:insert_position] = [self.points]
+			self.colors_lis[insert_position:insert_position] = [self.class_number]
+		else:
+			self.final_points.append(self.points)
+			self.colors_lis.append(self.class_number)
+
+		with self.canvas:
+			Color(color_palette[self.class_number* 3]/255, color_palette[(self.class_number* 3) + 1]/255, color_palette[(self.class_number* 3) + 2]/255, 1)
+			Line(points=self.points, group='Lines')
+
+		# Reiniciate points		
+		self.points = []
 
 	# Put a mark to save bounding boxes
 	def new_instance(self):
 		self.new_line()
 
 	def save_image(self):
+
+		# Change points to final_points list
+		self.new_line()
 
 		# Generated mask
 		final_image = Image.new("P", [int(round(self.ori_size[0])),int(round(self.ori_size[1]))])
@@ -441,23 +518,11 @@ class LinePlay(StackLayout):
 				self.zoom_in()
 
 		# Updating last points in list
-		self.lpoints = [(x[0] - self.image_car.pos[0], self.image_car.size[1] - (x[1] - self.image_car.pos[1])) for x in self.points]
 		self.final_lpoints = [[(x[0] - self.image_car.pos[0], self.image_car.size[1] - (x[1] - self.image_car.pos[1])) for x in y] for y in self.final_points]
 
 		# Drawing lines
-		if not self.lpoints or len(self.lpoints) == 1:
-			for i in self.final_lpoints:
-				# draw.polygon(i, fill=(255,255,255), outline=(255,255,255))
-				draw.polygon(i, fill=16, outline=16)
-		else:
-			for i in self.final_lpoints:
-				# draw.polygon(i, fill=(255,255,255), outline=(255,255,255))
-				draw.polygon(i, fill=16, outline=16)
-
-			# Close line
-			self.lpoints = self.lpoints + [self.lpoints[0]]
-			# draw.polygon(self.lpoints, fill=(255,255,255), outline=(255,255,255))
-			draw.polygon(self.lpoints, fill=16, outline=16)
+		for i in range(len(self.final_lpoints)):
+			draw.polygon(self.final_lpoints[i], fill=self.colors_lis[i], outline=self.colors_lis[i])
 
 		# Saved final image in mask folder
 		if self.obj.cu_state == "2D":
