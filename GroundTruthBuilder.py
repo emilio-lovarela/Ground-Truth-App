@@ -81,6 +81,8 @@ class LinePlay(StackLayout):
 		if filechooser == True:
 			pops.bind(on_dismiss=self.update_path)
 		else:
+			self.change_class.keycode = ""
+			self.change_class.filter_view() # Reiniciate view
 			pops.bind(on_dismiss=self.update_class)
 		pops.open()
 
@@ -274,7 +276,7 @@ class LinePlay(StackLayout):
 				if self.points:
 					self.points.pop()
 			elif keycode[1] == 'f':
-				self.new_instance()
+				self.new_line()
 				self.tog_bu.state = "normal"
 			elif keycode[1] == 'spacebar':
 				self.write_mode = True
@@ -493,7 +495,7 @@ class LinePlay(StackLayout):
 		self.points = []
 
 	# Put a mark to save bounding boxes
-	def new_instance(self):
+	def new_contour(self):
 		self.new_line()
 
 	def save_image(self):
@@ -527,25 +529,35 @@ class LinePlay(StackLayout):
 		# Saved final image in mask folder
 		if self.obj.cu_state == "2D":
 			folder_path = self.obj.path + "_masks"
+			csv_path = self.obj.path + "_csv.txt"
+			# csv_file = folder_path + "/" + self.file_name + "_mask.png"
 			final_path = folder_path + "/" + self.file_name + "_mask.png"
 		else:
 			folder_path = os.path.dirname(self.obj.path) + "_masks"
 
 			if self.obj.cu_state == "Volume": # Save in new volume folder
 				folder_path = folder_path + "/" + os.path.basename(self.obj.path.replace(self.extension, ""))
+				csv_path = folder_path + "/" + os.path.basename(self.obj.path.replace(self.extension, "_csv.txt"))
 				final_path = folder_path + "/" + self.file_name + "_mask.png"
 			else:
 				final_path = folder_path + "/" + os.path.basename(self.obj.path.replace(".zip", "")) + "/" + self.zip_name + "_mask.png"
 				folder_path = os.path.dirname(final_path)
+				csv_path = os.path.dirname(final_path) + "_csv.txt"
 
 		# Save mask in folder. Create folder if doenst exists
 		pathlib.Path(folder_path).mkdir(parents=True, exist_ok=True)
 		final_image.save(final_path)
 
+		# Write csv files
+		if len(self.change_class.classes) > 1:
+			with open(csv_path, mode='w') as file:
+
+				file.write("background\t0")
+				for item in self.change_class.classes:
+					file.write("\n" + item + "\t" + str(self.change_class.classes.get(item)))
+
 		# Reiniciate zoom_val and seeds
 		self.zoom_val = 0
-		self.close = True
-		self.tog_bu.state = "down"
 
 		# Check if filter is actived
 		if self.switchid.active == True:

@@ -73,6 +73,7 @@
 
 	    GridLayout:
 	    	orientation: 'vertical'
+	    	spacing: 3,3
 	    	cols: 2
 			size_hint: 1, 1
 		    pos: self.pos
@@ -121,43 +122,45 @@
 	        Button:
 	            size_hint: 1, 1
 	            text: 'Options'
-	            # on_press: root.undo_instance()
+	            background_color: 51/255, 255/255, 121/255, .8
+	            background_normal: ''
+	            color: 0,0,0,1
 	            on_press: root.tex_control = ""
 
 	        Button:
 				size_hint: 1, 1
-	            text: 'Change class'
+	            text: 'Change Class'
+	            color: 0,0,0,1
+	            background_color: tuple(root.class_color)
+	            background_normal: ''
 	            on_press: root.fire_popup(root.change_class, False)
 	            on_press: root.write_mode = True
 
 	        Button:
 				size_hint: 1, 1
-	            text: 'New contour'
-	            on_press: root.new_line()
+	            text: 'New Contour'
+	            background_color: 51/255, 255/255, 121/255, .8
+	            background_normal: ''
+	            color: 0,0,0,1
+	            disabled: True
+	            on_press: root.new_contour()
 	            on_press: Tog.state = 'normal'
 
 	        Button:
 				size_hint: 1, 1
-	            text: 'New instance'
-	            on_press: root.new_instance()
+	            text: 'New Instance'
+	            background_color: 51/255, 255/255, 121/255, 1
+	            background_normal: ''
+	            color: 0,0,0,1
+	            on_press: root.new_line()
 	            on_press: Tog.state = 'normal'
 
 	        Button:
-	            size_hint: 1, 1
-	            text: 'Del instance'
-	            on_press: root.undo_instance()
-	            on_press: root.tex_control = ""
-
-	        Button:
-	    		size_hint: 1, 1
-	            text: 'Undo Point'
-	            color: 1,0,0,1
-	            on_press: None if not root.points else root.points.pop()
-
-	        Button:
 	        	size_hint: 1, 1
-	            text: 'Save mask'
-	            color: 0,1,1,1
+	            text: 'Save Mask'
+	            background_color: 51/255, 219/255, 255/255, 1
+	            background_normal: ''
+	            color: 0,0,0,1
 	            disabled: root.disa
 	            on_press: root.save_image()
 	            on_press: root.tex_control = "Image saved!"
@@ -167,9 +170,29 @@
 	        	font_size: 20
 				color: 1,0,1,1
 
+	        Button:
+	            size_hint: 1, 1
+	            text: 'Del Instance'
+	            background_color: 248/255, 255/255, 51/255, .9
+	            background_normal: ''
+	            color: 0,0,0,1
+	            on_press: root.undo_instance()
+	            on_press: root.tex_control = ""
+
+	        Button:
+	    		size_hint: 1, 1
+	            text: 'Undo Point'
+	            background_color: 248/255, 255/255, 51/255, 1
+	            background_normal: ''
+	            color: 0,0,0,1
+	            on_press: None if not root.points else root.points.pop()
+
 			Button:
 	    		size_hint: 1, 1
-	            text: 'Clear all'
+	            text: 'Clear All'
+	            background_color: 248/255, 255/255, 51/255, .9
+	            background_normal: ''
+	            color: 0,0,0,1
 	            on_press: root.final_points = []
 	            on_press: root.final_lpoints = []
 	            on_press: root.canvas.remove_group('Lines')
@@ -181,5 +204,8 @@
 	        ToggleButton:
 	        	id: Tog
 	        	size_hint: 1, 1
-	            text: 'Close line'
+	            text: 'Close Line'
+	            background_color: 248/255, 255/255, 51/255, .9
+	            background_normal: ''
+	            color: 0,0,0,1
 	            on_press: root.close = self.state == 'down'

@@ -3,3 +3,4 @@ images_masks/
 __pycache__/
 Instrucctions.jpg
 RootPath.json
+images_csv.txt

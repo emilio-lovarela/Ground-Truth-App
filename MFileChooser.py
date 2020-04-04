@@ -123,8 +123,8 @@ class ChangeClass(Popup):
 		if self.mode == "edit":
 			if self.block == True:
 				# If class text is empty, or used return advice
-				if self.current_class.text == "":
-					self.advice = "Empty name is invalid!"
+				if self.current_class.text == "" or self.current_class.text == "background":
+					self.advice = "Invalid name!"
 				elif self.classes.get(self.current_class.text) != None and self.current_class.text != self.class_name:
 					self.advice = "Class name already exists!"
 				else:
@@ -150,6 +150,9 @@ class ChangeClass(Popup):
 			# Eliminate class if exists
 			if self.current_class == "":
 				return
+			elif len(self.classes) == 1:
+				self.advice = "A class is necessary!"
+				return
 			elif self.classes.get(self.current_class.text) != None:
 				self.not_used_num.append(self.classes.pop(self.class_name))
 				self.ids.grid.remove_widget(self.current_class)
@@ -159,8 +162,8 @@ class ChangeClass(Popup):
 
 		# Normal mode options
 		# Handle empty classes
-		if len(self.keycode) == 0:
-			self.advice = "Empty names not allowed!"
+		if len(self.keycode) == 0 or self.keycode == "background":
+			self.advice = "Invalid name!"
 			return
 
 		# Fill dic with new value
