@@ -2,7 +2,7 @@ from kivy.lang import Builder
 from kivy.uix.popup import Popup
 from kivy.uix.button import Button
 from kivy.storage.jsonstore import JsonStore
-from kivy.properties import StringProperty, ObjectProperty, DictProperty, ListProperty
+from kivy.properties import StringProperty, ObjectProperty, DictProperty, ListProperty, BooleanProperty
 
 from os.path import isdir, exists, isfile
 from zipfile import ZipFile
@@ -77,11 +77,50 @@ class MFileChooser(Popup):
 				else:
 					self.Invalid_Path = 'No images in Zip!'
 
+# FIleChooser load/save csv
+class Loadcsv(Popup):
+	load_path = ""
+	dic_classes = {}
+	RootPath = StringProperty('')
+	store = JsonStore('RootPath.json')
+
+	def __init__(self):
+		super(Loadcsv, self).__init__()
+		# Load Rootpath if exists
+		if self.store.exists('RootPath'):
+			if exists(self.store.get('RootPath')['Path']) == True:
+				self.RootPath = self.store.get('RootPath')['Path']
+
+	def dismiss_file(self, file_path):
+			# Read CSV and update dictionary
+			self.dic_classes = {}
+			with open(file_path, mode='r') as file:
+				first = file.readline()
+				for line in file:
+					try:
+						key, value = line.split("\t")
+						value = int(value)
+					except:
+						continue
+
+					# Check if value its a int number between 1, 256
+					if value > 0 and value < 256:
+						if key != "background":
+							self.dic_classes[key] = value
+
+			# Check fails
+			if len(self.dic_classes) == 0:
+				self.dismiss()
+
+			self.load_path = file_path
+			self.dismiss()
 
 # Classes, categories (dog, cat, human...) Popup
 class ChangeClass(Popup):
 
 	# Variables and kivy properties
+	load_class = Loadcsv()
+	load_path = ""
 	keycode = StringProperty("class1")
 	classes = DictProperty()
 	current_class = ObjectProperty()
@@ -133,6 +172,8 @@ class ChangeClass(Popup):
 					self.class_name = self.current_class.text
 
 					# Activate all buttons again
+					self.normaler.disabled = False
+					self.remover.disabled = False
 					for button in self.ids.grid.children.copy():
 						button.disabled = False
 					
@@ -245,9 +286,33 @@ class ChangeClass(Popup):
 			self.keycode = instance.text
 
 			# Disabled all buttons except selected
+			self.normaler.disabled = True
+			self.remover.disabled = True
 			for button in self.ids.grid.children.copy():
 				if button != instance:
 					button.disabled = True
+
+	# Update classes from csv callback
+	def update_classes(self, _):
+		# Handle auto dismiss error
+		if self.load_path == self.load_class.load_path:
+			return
+
+		self.load_path = self.load_class.load_path
+		self.not_used_num = list(self.load_class.dic_classes.values())
+		self.not_used_num.reverse()
+		self.max_num = max(self.not_used_num) + 1
+
+		# Update widgets and dictionary
+		classes = self.load_class.dic_classes
+		self.classes = {}
+		self.ids.grid.clear_widgets()
+		for item in classes:
+			self.keycode = item
+			self.new_class()
+
+		# Update text and current class
+		self.button_calback(self.ids.grid.children[-1])
 
 	# Keyboard write grab
 	def keyboard_grab(self, keycode):

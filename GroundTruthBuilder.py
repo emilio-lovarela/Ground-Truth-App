@@ -31,6 +31,8 @@ class LinePlay(StackLayout):
 	path_change = '' # Control changes in path
 	change_class = ChangeClass()
 	write_mode = BooleanProperty(False)
+	load_path = ""
+	do_copy = True
 	
 	vol_dimension = BooleanProperty(True)
 	max_dime = NumericProperty(1)
@@ -153,6 +155,7 @@ class LinePlay(StackLayout):
 		self.class_color = self.change_class.class_color
 		self.class_number = self.change_class.classes.get(self.class_name)
 		self.write_mode = False
+		self.load_path = self.change_class.load_path
 
 	def changeimage(self, value, value2):
 		self.close = False # Reiniciate close line
@@ -536,8 +539,8 @@ class LinePlay(StackLayout):
 			folder_path = os.path.dirname(self.obj.path) + "_masks"
 
 			if self.obj.cu_state == "Volume": # Save in new volume folder
+				csv_path = folder_path.replace("_masks", "_csv.txt")
 				folder_path = folder_path + "/" + os.path.basename(self.obj.path.replace(self.extension, ""))
-				csv_path = folder_path + "/" + os.path.basename(self.obj.path.replace(self.extension, "_csv.txt"))
 				final_path = folder_path + "/" + self.file_name + "_mask.png"
 			else:
 				final_path = folder_path + "/" + os.path.basename(self.obj.path.replace(".zip", "")) + "/" + self.zip_name + "_mask.png"
@@ -548,10 +551,17 @@ class LinePlay(StackLayout):
 		pathlib.Path(folder_path).mkdir(parents=True, exist_ok=True)
 		final_image.save(final_path)
 
+		# Check if load_path is active
+		if self.load_path != "":
+			csv_path = self.load_path
+		else:
+			# Copy for prevent user save error
+			if os.path.exists(csv_path) and self.do_copy == True:
+				csv_path = csv_path.replace(".txt", "_copy.txt")
+
 		# Write csv files
 		if len(self.change_class.classes) > 1:
 			with open(csv_path, mode='w') as file:
-
 				file.write("background\t0")
 				for item in self.change_class.classes:
 					file.write("\n" + item + "\t" + str(self.change_class.classes.get(item)))
@@ -562,6 +572,7 @@ class LinePlay(StackLayout):
 		# Check if filter is actived
 		if self.switchid.active == True:
 			self.filter_boolean = True
+		self.do_copy = False
 
 class GroundTruthBuilder(App):
 	def build(self):
