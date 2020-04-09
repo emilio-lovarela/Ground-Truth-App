@@ -6,7 +6,7 @@ from kivy.properties import StringProperty, ObjectProperty, DictProperty, ListPr
 
 from os.path import isdir, exists, isfile
 from zipfile import ZipFile
-from Color_palette import text_render_size, color_palette
+from Color_palette import text_render_size, color_palette, text_labels
 
 Builder.load_file("MFileChooser.kv")
 
@@ -349,3 +349,13 @@ class ChangeClass(Popup):
 			self.filter_view()
 		else:
 			self.change_class()
+
+# Options class
+class Options(Popup):
+	mode = StringProperty("Segmentation") # Clasification, Bounding_boxes, Segmentation, Instance
+	description = StringProperty(text_labels.get("Segmentation"))
+
+	# Update description
+	def change_description(self, key):
+		self.mode = key
+		self.description = text_labels.get(key)

@@ -16,7 +16,7 @@ from kivy.uix.stacklayout import StackLayout
 from kivy.uix.image import CoreImage
 from kivy.graphics import Line, Color
 from kivy.core.window import Window # Just in windows?
-from MFileChooser import MFileChooser, ChangeClass
+from MFileChooser import MFileChooser, ChangeClass, Options
 from Image_formats import Compress_image, Volume_image
 from Color_palette import color_palette
 
@@ -29,19 +29,23 @@ class LinePlay(StackLayout):
 	# General Properties
 	obj = MFileChooser()
 	path_change = '' # Control changes in path
+	options_class = Options()
 	change_class = ChangeClass()
 	write_mode = BooleanProperty(False)
 	load_path = ""
 	do_copy = True
+	mode = StringProperty("Segmentation")
+	id_instance = 1
 	
 	vol_dimension = BooleanProperty(True)
 	max_dime = NumericProperty(1)
 	close = BooleanProperty(False)
 	disa = BooleanProperty(True)
 	points = ListProperty([])
-	lpoints = ListProperty([])
 	final_points = ListProperty([])
 	final_lpoints = ListProperty([])
+	bounding_csv = []
+	wait_cont = []
 	priority_draw = {} # Control hierarchy features
 
 	# Class variables
@@ -78,14 +82,33 @@ class LinePlay(StackLayout):
 		self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
 		self._keyboard.bind(on_key_down=self._on_keyboard_down)
 
+		# Control window size possibilities
+		Window.bind(on_resize=self.window_size_control)
+		self.windows_sizes = [Window.size]
+		Window.maximize() # Just work in windows?
+		self.windows_sizes.append(Window.size)
+
+	# Allow two sizes
+	def window_size_control(self, _, t, r):
+		if len(self.windows_sizes) == 2:
+			if t == self.windows_sizes[1][0] and r == self.windows_sizes[1][1]:
+				return
+			else:
+				Window.size = self.windows_sizes[0]
+		else:
+			return
+
 	# Function to Popup
 	def fire_popup(self, pops, filechooser):
-		if filechooser == True:
+		if filechooser == "filechooser":
 			pops.bind(on_dismiss=self.update_path)
-		else:
+		elif filechooser == "chan_class":
 			self.change_class.keycode = ""
 			self.change_class.filter_view() # Reiniciate view
 			pops.bind(on_dismiss=self.update_class)
+		elif filechooser == "options":
+			pops.bind(on_dismiss=self.update_options)
+
 		pops.open()
 
 	# Function called by clock to update de current path
@@ -142,11 +165,20 @@ class LinePlay(StackLayout):
 			# Reiniciate factors
 			self.x_factor = 0
 			self.y_factor = 0
-			self.ori_size = self.image_car.size
 			self.zoom_val = 0
 			self.switchid.active = False
 			self.filter_boolean = False
 			self.path_change = self.obj.path
+			self.final_points = []
+			self.final_lpoints = []
+			self.canvas.remove_group('Lines')
+			self.points = []
+			self.lpoints = []
+			self.colors_lis = []
+			self.bounding_csv = []
+			self.wait_cont = []
+			self.anla_ya.do_layout()
+			self.ori_size = self.image_car.size
 
 	# Update class and return keyboard normal control
 	def update_class(self, _):
@@ -156,6 +188,21 @@ class LinePlay(StackLayout):
 		self.class_number = self.change_class.classes.get(self.class_name)
 		self.write_mode = False
 		self.load_path = self.change_class.load_path
+
+	# Update mode of options
+	def update_options(self, _):
+		self.mode = self.options_class.mode
+
+		# Reiniciate factors
+		self.final_points = []
+		self.final_lpoints = []
+		self.canvas.remove_group('Lines')
+		self.points = []
+		self.lpoints = []
+		self.colors_lis = []
+		self.bounding_csv = []
+		self.wait_cont = []
+		self.tex_control = ""
 
 	def changeimage(self, value, value2):
 		self.close = False # Reiniciate close line
@@ -243,7 +290,6 @@ class LinePlay(StackLayout):
 				return True
 
 		# Grab Clicks
-		self.tex_control = ""
 		touch.grab(self)
 		self.points.append(touch.pos)
 		return True
@@ -279,7 +325,7 @@ class LinePlay(StackLayout):
 				if self.points:
 					self.points.pop()
 			elif keycode[1] == 'f':
-				self.new_line()
+				self.new_line(True)
 				self.tog_bu.state = "normal"
 			elif keycode[1] == 'spacebar':
 				self.write_mode = True
@@ -333,8 +379,8 @@ class LinePlay(StackLayout):
 				Line(points=i, group='Lines')
 
 		# Update image size and pos (Handling updated error)
-		self.image_car.pos[0] = self.image_car.pos[0] - self.image_car.size[0] / 2
-		self.image_car.pos[1] = self.image_car.pos[1] - self.image_car.size[1] / 2
+		# self.image_car.pos[0] = self.image_car.pos[0] - self.image_car.size[0] / 2
+		# self.image_car.pos[1] = self.image_car.pos[1] - self.image_car.size[1] / 2
 
 		self.image_car.size[0] = self.image_car.size[0] * 2
 		self.image_car.size[1] = self.image_car.size[1] * 2
@@ -367,8 +413,8 @@ class LinePlay(StackLayout):
 		self.image_car.size[0] = self.image_car.size[0] / 2
 		self.image_car.size[1] = self.image_car.size[1] / 2
 
-		self.image_car.pos[0] = self.image_car.size[0] / 2 + self.image_car.pos[0]
-		self.image_car.pos[1] = self.image_car.size[1] / 2 + self.image_car.pos[1]
+		# self.image_car.pos[0] = self.image_car.size[0] / 2 + self.image_car.pos[0]
+		# self.image_car.pos[1] = self.image_car.size[1] / 2 + self.image_car.pos[1]
 
 		self.anla_ya.do_layout()
 		
@@ -437,9 +483,27 @@ class LinePlay(StackLayout):
 		except:
 			return
 
-		# Remove element from list and update canvas
-		del self.final_points[index]
-		del self.colors_lis[index]
+		# Handle instance mode del instance contours
+		if self.mode == "Instance":
+			indices = [index]
+			compro = self.bounding_csv[index]
+			if isinstance(compro[-1], str) == True: # Check id
+
+				index2 = 0
+				for item in self.bounding_csv:
+					if item[-1] == compro[-1] and index2 != index:
+						indices.append(index2)
+					index2 += 1
+
+			for ind in sorted(indices, reverse=True):
+				# Remove element from list and update canvas
+				del self.final_points[ind]
+				del self.colors_lis[ind]
+				del self.bounding_csv[ind]
+		else:
+			# Remove element from list
+			del self.final_points[index]
+			del self.colors_lis[index]
 
 		# Removing painted lines
 		self.canvas.remove_group('Lines')
@@ -450,14 +514,49 @@ class LinePlay(StackLayout):
 				Color(color_palette[color * 3]/255, color_palette[(color * 3) + 1]/255, color_palette[(color * 3) + 2]/255, 1)
 				Line(points=i, group='Lines')
 
-	def new_line(self):
+	def new_line(self, bounding):
 		# Handling empty list error
-		if not self.points:
+		if not self.points or len(self.points) == 1:
 			self.close = False # Reiniciate close line
 			return
 
 		# Final point list
 		self.points.append(self.points[0])
+
+		# If mode is instance calculate bounding boxes and append to list.
+		if bounding == True and self.mode == "Instance":
+			points = self.points
+			points = self.prepare_box(points)
+			self.wait_cont.extend(points)
+
+			# Calculate x y w h
+			x, y = self.wait_cont[0]
+			w, h = self.wait_cont[0]
+			for poi in self.wait_cont:
+				new_x, new_y = poi
+
+				# Update values
+				if new_x > w:
+					w = new_x
+				if new_x < x:
+					x = new_x
+				if new_y > h:
+					h = new_y
+				if new_y < y:
+					y = new_y
+
+			# CSV list
+			if self.tex_control == "Contour mode":
+				list_csv = [self.class_name, x, y, w, h, str(self.id_instance)]
+				self.id_instance += 1
+				self.tex_control = ""
+			else:
+				list_csv = [self.class_name, x, y, w, h]
+
+			# Reiniciate wait list
+			self.wait_cont = []
+		elif self.mode == "Instance":
+			list_csv = [str(self.id_instance)]
 
 		# Create points polygon
 		new_polygon = Polygon(self.points)
@@ -486,9 +585,15 @@ class LinePlay(StackLayout):
 		if compro_hiera == False:
 			self.final_points[insert_position:insert_position] = [self.points]
 			self.colors_lis[insert_position:insert_position] = [self.class_number]
+
+			if self.mode == "Instance":
+				self.bounding_csv[insert_position:insert_position] = [list_csv]
 		else:
 			self.final_points.append(self.points)
 			self.colors_lis.append(self.class_number)
+
+			if self.mode == "Instance":
+				self.bounding_csv.append(list_csv)
 
 		with self.canvas:
 			Color(color_palette[self.class_number* 3]/255, color_palette[(self.class_number* 3) + 1]/255, color_palette[(self.class_number* 3) + 2]/255, 1)
@@ -499,12 +604,37 @@ class LinePlay(StackLayout):
 
 	# Put a mark to save bounding boxes
 	def new_contour(self):
-		self.new_line()
+		# Handling empty list error
+		if not self.points or len(self.points) == 1:
+			self.close = False # Reiniciate close line
+			return
+
+		# Save Bounding boxes original position
+		points = self.points
+		points.append(points[0])
+		points = self.prepare_box(points)
+
+		self.wait_cont.extend(points)
+		self.tex_control = "Contour mode"
+		self.new_line(False)
+
+	# Prepare bounding_boxes
+	def prepare_box(self, points):
+		copy = self.zoom_val
+		points = [(x[0] + self.x_factor, x[1] + self.y_factor) for x in points]
+		if copy > 0:
+			for val in range(0, copy):
+				points = [(((self.image_car.center_x + self.x_factor + x[0])/2), ((self.image_car.center_y + self.y_factor + x[1])/2)) for x in points]
+		elif copy < 0:
+			for val in range(0, abs(copy)):
+				points = [(x[0] - (self.image_car.center_x + self.x_factor - x[0]), x[1] - (self.image_car.center_y + self.y_factor - x[1])) for x in points]
+
+		return points
 
 	def save_image(self):
 
 		# Change points to final_points list
-		self.new_line()
+		self.new_line(True)
 
 		# Generated mask
 		final_image = Image.new("P", [int(round(self.ori_size[0])),int(round(self.ori_size[1]))])
@@ -532,20 +662,26 @@ class LinePlay(StackLayout):
 		# Saved final image in mask folder
 		if self.obj.cu_state == "2D":
 			folder_path = self.obj.path + "_masks"
-			csv_path = self.obj.path + "_csv.txt"
-			# csv_file = folder_path + "/" + self.file_name + "_mask.png"
+			csv_path = self.obj.path + "_csv_tag_color.txt"
+			csv_folder = self.obj.path + "_csv"
 			final_path = folder_path + "/" + self.file_name + "_mask.png"
+			csv_final_path = csv_folder + "/" + self.file_name + "_csv.txt"
 		else:
 			folder_path = os.path.dirname(self.obj.path) + "_masks"
+			csv_folder = os.path.dirname(self.obj.path) + "_csv"
 
 			if self.obj.cu_state == "Volume": # Save in new volume folder
-				csv_path = folder_path.replace("_masks", "_csv.txt")
+				csv_path = folder_path.replace("_masks", "_csv_tag_color.txt")
 				folder_path = folder_path + "/" + os.path.basename(self.obj.path.replace(self.extension, ""))
+				csv_folder = csv_folder + "/" + os.path.basename(self.obj.path.replace(self.extension, ""))
 				final_path = folder_path + "/" + self.file_name + "_mask.png"
+				csv_final_path = csv_folder + "/" + self.file_name + "_csv.txt"
 			else:
+				csv_path = folder_path.replace("_masks", "/") + os.path.basename(self.obj.path.replace(".zip", "_csv_tag_color.txt"))
 				final_path = folder_path + "/" + os.path.basename(self.obj.path.replace(".zip", "")) + "/" + self.zip_name + "_mask.png"
+				csv_final_path = csv_folder + "/" + os.path.basename(self.obj.path.replace(".zip", "")) + "/" + self.zip_name + "_csv.txt"
 				folder_path = os.path.dirname(final_path)
-				csv_path = os.path.dirname(final_path) + "_csv.txt"
+				csv_folder = os.path.dirname(csv_final_path)
 
 		# Save mask in folder. Create folder if doenst exists
 		pathlib.Path(folder_path).mkdir(parents=True, exist_ok=True)
@@ -566,6 +702,34 @@ class LinePlay(StackLayout):
 				for item in self.change_class.classes:
 					file.write("\n" + item + "\t" + str(self.change_class.classes.get(item)))
 
+		# Save bounding boxes in instance mode
+		if self.mode == "Instance":
+
+			# Create csv image
+			pathlib.Path(csv_folder).mkdir(parents=True, exist_ok=True)
+			with open(csv_final_path, mode='w') as file:
+
+				# Updating bounding_csv
+				for items in self.bounding_csv:
+					if len(items) == 5:
+						clas, x, y, w, h = items
+					elif len(items) == 6:
+						clas, x, y, w, h, _ = items
+					else:
+						continue
+
+					# Calculate points reference and save
+					x = x - self.image_car.pos[0] - self.x_factor if x - self.image_car.pos[0] - self.x_factor > 0 else 0
+					w = w - self.image_car.pos[0] - self.x_factor if w - self.image_car.pos[0] - self.x_factor < self.image_car.size[0] else self.image_car.size[0]
+					y = y - self.image_car.pos[1] - self.y_factor if y - self.image_car.pos[1] - self.y_factor > 0 else 0
+					h = h - self.image_car.pos[1] - self.y_factor if h - self.image_car.pos[1] - self.y_factor < self.image_car.size[1] else self.image_car.size[1]
+					w = w - x
+					h = h - y
+
+					# If caption active add caption popup
+					write_line = clas + "\t" + str(round(x)) + "\t" + str(round(y)) + "\t" + str(round(w)) + "\t" + str(round(h)) + "\n"
+					file.write(write_line)
+
 		# Reiniciate zoom_val and seeds
 		self.zoom_val = 0
 
@@ -580,5 +744,4 @@ class GroundTruthBuilder(App):
 
 
 if __name__ == '__main__':
-	Window.maximize() # Just work in windows?
 	GroundTruthBuilder().run()

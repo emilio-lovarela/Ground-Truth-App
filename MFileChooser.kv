@@ -209,3 +209,99 @@
 	        filters: ["*.txt"]
 		    path: root.RootPath
 		    on_submit: root.dismiss_file(self.selection[0])
+
+<Options>:
+	size_hint: .8, .8
+	title: "Options Menu"
+	title_align: "center"
+	title_size: 30
+	title_color: [0,1,0,1]
+
+	BoxLayout:
+		size: self.size
+		orientation: 'vertical'
+		cols: 4
+
+		BoxLayout:
+			size_hint: 1, .05
+			orientation: 'vertical'
+
+		GridLayout:
+			size_hint: .8, .1
+			pos_hint: {'center_x': .5, 'center_y': .5}
+			orientation: 'vertical'
+			cols: 4
+
+			ToggleButton:
+				allow_no_selection: False
+				group: "mode_op"
+	    		size_hint: 1, 1
+	    		text: "Clasification"
+	    		halign: 'center'
+	    		valign: 'middle'
+	    		on_press: root.change_description("Clasification")
+
+	    	ToggleButton:
+	    		allow_no_selection: False
+				group: "mode_op"
+	    		size_hint: 1, 1
+	    		text: "Object\nDetection"
+	    		halign: 'center'
+	    		valign: 'middle'
+	    		on_press: root.change_description("Bounding_boxes")
+
+	    	ToggleButton:
+	    		allow_no_selection: False
+				group: "mode_op"
+	    		size_hint: 1, 1
+	    		state: "down"
+	    		text: "Semantic\nSegmentation"
+	    		halign: 'center'
+	    		valign: 'middle'
+	    		on_press: root.change_description("Segmentation")
+
+	    	ToggleButton:
+	    		allow_no_selection: False
+				group: "mode_op"
+	    		size_hint: 1, 1
+	    		text: "Instance\nSegmentation"
+	    		halign: 'center'
+	    		valign: 'middle'
+	    		on_press: root.change_description("Instance")
+
+	    BoxLayout:
+	    	size_hint: .8, .7
+			pos_hint: {'center_x': .5, 'center_y': .5}
+
+	    	Label:
+	    		text: root.description
+	    		padding: 0, 20
+	    		font_size: 17
+	    		text_size: self.size
+	    		valign: "top"
+				halign: "left"
+
+	    RelativeLayout:
+	    	size_hint: 1, .1
+
+	    	RelativeLayout:
+	    		size_hint: .2, 1
+	    		pos_hint: {'center_x': .1, 'center_y': .5}
+
+		    	Label:
+		    		text: "Active Caption"
+		    		font_size: 17
+		    		text_size: self.size
+		    		padding: 20,0
+		    		valign: "middle"
+					halign: "left"
+
+		    	CheckBox:
+		    		pos_hint: {'center_x': .82, 'center_y': .49}
+
+		    Button
+		    	size_hint: 0.15, .7
+	    		pos_hint: {'center_x': .85, 'center_y': .6}
+	    		text: "Select mode"
+	    		color: 1,1,0,1
+	    		on_press: root.dismiss()
