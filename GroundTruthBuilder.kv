@@ -191,6 +191,7 @@
 	            background_color: 248/255, 255/255, 51/255, 1
 	            background_normal: ''
 	            color: 0,0,0,1
+	            disabled: True if root.mode == 'Bounding_boxes' else False
 	            on_press: None if not root.points else root.points.pop()
 
 			Button:

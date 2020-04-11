@@ -284,21 +284,37 @@
 	    RelativeLayout:
 	    	size_hint: 1, .1
 
-	    	RelativeLayout:
-	    		size_hint: .2, 1
-	    		pos_hint: {'center_x': .1, 'center_y': .5}
+	    	GridLayout:
+	    		size_hint: .6, 1
+	    		cols: 6
 
 		    	Label:
-		    		text: "Active Caption"
+		    		text: "Caption"
 		    		font_size: 17
 		    		text_size: self.size
-		    		padding: 20,0
 		    		valign: "middle"
-					halign: "left"
+					halign: "right"
 
 		    	CheckBox:
-		    		pos_hint: {'center_x': .82, 'center_y': .49}
 
+		    	Label:
+		    		text: "Edges"
+		    		font_size: 17
+		    		text_size: self.size
+		    		valign: "middle"
+					halign: "right"
+
+		    	CheckBox:
+
+		    	Label:
+		    		text: "Palette"
+		    		font_size: 17
+		    		text_size: self.size
+		    		valign: "middle"
+					halign: "right"
+
+		    	CheckBox:
+		    	
 		    Button
 		    	size_hint: 0.15, .7
 	    		pos_hint: {'center_x': .85, 'center_y': .6}
