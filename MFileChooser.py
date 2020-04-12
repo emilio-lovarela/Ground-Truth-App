@@ -133,6 +133,8 @@ class ChangeClass(Popup):
 	max_num = 2
 	not_used_num = []
 	mode = StringProperty("normal") # normal, edit, remove
+	save_clasi = False
+	clasifi = False
 
 	# Charge default values
 	def __init__(self):
@@ -280,6 +282,7 @@ class ChangeClass(Popup):
 		self.class_name = instance.text
 		self.class_color = instance.background_color
 		if self.mode == "normal":
+			self.save_clasi = True
 			self.dismiss()
 		elif self.mode == "edit":
 			self.block = True
@@ -312,7 +315,8 @@ class ChangeClass(Popup):
 			self.new_class()
 
 		# Update text and current class
-		self.button_calback(self.ids.grid.children[-1])
+		if self.clasifi == False:
+			self.button_calback(self.ids.grid.children[-1])
 
 	# Keyboard write grab
 	def keyboard_grab(self, keycode):

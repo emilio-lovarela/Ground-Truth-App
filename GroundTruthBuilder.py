@@ -15,6 +15,7 @@ from kivy.properties import NumericProperty, ListProperty, \
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.image import CoreImage
 from kivy.graphics import Line, Color
+from kivy.storage.jsonstore import JsonStore
 from kivy.core.window import Window # Just in windows?
 from MFileChooser import MFileChooser, ChangeClass, Options
 from Image_formats import Compress_image, Volume_image
@@ -33,7 +34,6 @@ class LinePlay(StackLayout):
 	change_class = ChangeClass()
 	write_mode = BooleanProperty(False)
 	load_path = ""
-	do_copy = True
 	mode = StringProperty("Segmentation")
 	id_instance = 1
 	
@@ -186,12 +186,43 @@ class LinePlay(StackLayout):
 		self.class_name = self.change_class.class_name
 		self.class_color = self.change_class.class_color
 		self.class_number = self.change_class.classes.get(self.class_name)
-		self.write_mode = False
 		self.load_path = self.change_class.load_path
+
+		if self.mode == "Clasification" and self.change_class.save_clasi == True:
+
+			if self.obj.cu_state == "2D":
+				json_name = self.obj.path + ".json"
+				store = JsonStore(json_name)
+				file_name = self.file_name
+			elif self.obj.cu_state == "Compress":
+				json_name = self.obj.path.replace(".zip", "") + ".json"
+				store = JsonStore(json_name)
+				file_name = self.zip_name
+			else:
+				json_name = self.obj.path.replace(self.extension, "") + ".json"
+				store = JsonStore(json_name)
+				file_name = self.file_name
+
+			# Store the image/class
+			store.put(file_name, Class=self.change_class.class_name)
+
+			self.change_class.advice = "Image tag saved!"
+			self.change_class.save_clasi = False
+			self.create_general_csv(json_name.replace(".json", "_csv_tag_color.txt"))
+			return True
+
+		self.write_mode = False
+		self.change_class.save_clasi = False
 
 	# Update mode of options
 	def update_options(self, _):
 		self.mode = self.options_class.mode
+
+		# Prevent select class while loading csv
+		if self.mode == "Clasification":
+			self.change_class.clasifi = True
+		else:
+			self.change_class.clasifi = False
 
 		# Reiniciate factors
 		self.final_points = []
@@ -363,6 +394,7 @@ class LinePlay(StackLayout):
 			elif keycode[1] == 'w' or 's' or 'a' or 'd':
 				self.move_in(keycode[1])
 		else:
+			self.change_class.advice = "" # Reiniciate advice
 			if keycode[1] == 'right':
 				# Change to next image
 				if self.slider_max.value < self.slider_max.max:
@@ -641,6 +673,23 @@ class LinePlay(StackLayout):
 
 		return points
 
+	# Auxiliar function general class csv save
+	def create_general_csv(self, csv_path):
+		# Check if load_path is active
+			if self.load_path != "":
+				csv_path = self.load_path
+			else:
+				# Copy for prevent user save error
+				if os.path.exists(csv_path):
+					csv_path = csv_path.replace(".txt", "_copy.txt")
+
+			# Write csv files
+			if len(self.change_class.classes) > 1:
+				with open(csv_path, mode='w') as file:
+					file.write("background\t0")
+					for item in self.change_class.classes:
+						file.write("\n" + item + "\t" + str(self.change_class.classes.get(item)))
+
 	def save_image(self):
 
 		# Change points to final_points list
@@ -699,20 +748,8 @@ class LinePlay(StackLayout):
 			pathlib.Path(folder_path).mkdir(parents=True, exist_ok=True)
 			final_image.save(final_path)
 
-			# Check if load_path is active
-			if self.load_path != "":
-				csv_path = self.load_path
-			else:
-				# Copy for prevent user save error
-				if os.path.exists(csv_path) and self.do_copy == True:
-					csv_path = csv_path.replace(".txt", "_copy.txt")
-
-			# Write csv files
-			if len(self.change_class.classes) > 1:
-				with open(csv_path, mode='w') as file:
-					file.write("background\t0")
-					for item in self.change_class.classes:
-						file.write("\n" + item + "\t" + str(self.change_class.classes.get(item)))
+		# General class value csv
+		self.create_general_csv(csv_path)
 
 		# Save bounding boxes in instance mode
 		if self.mode == "Instance" or self.mode == "Bounding_boxes":
@@ -748,7 +785,6 @@ class LinePlay(StackLayout):
 		# Check if filter is actived
 		if self.switchid.active == True:
 			self.filter_boolean = True
-		self.do_copy = False
 
 class GroundTruthBuilder(App):
 	def build(self):
