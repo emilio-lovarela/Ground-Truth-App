@@ -285,8 +285,8 @@
 	    	size_hint: 1, .1
 
 	    	GridLayout:
-	    		size_hint: .6, 1
-	    		cols: 6
+	    		size_hint: .4, 1
+	    		cols: 4
 
 		    	Label:
 		    		text: "Caption"
@@ -296,28 +296,31 @@
 					halign: "right"
 
 		    	CheckBox:
+		    		on_active: root.caption = self.active
 
 		    	Label:
-		    		text: "Edges"
+		    		text: "Borders"
 		    		font_size: 17
 		    		text_size: self.size
 		    		valign: "middle"
 					halign: "right"
 
 		    	CheckBox:
+		    		on_active: root.borders = self.active
 
-		    	Label:
-		    		text: "Palette"
-		    		font_size: 17
-		    		text_size: self.size
-		    		valign: "middle"
-					halign: "right"
-
-		    	CheckBox:
+	    	Button:
+	    		size_hint: 0.18, .7
+	    		pos_hint: {'center_x': .6, 'center_y': .6}
+	    		text: "Create data"
+	    		disabled: True
+	    		font_size: 17
+	    		background_color: 51/255, 255/255, 121/255, 1
+	            background_normal: ''
+	            color: 0,0,0,1
 		    	
 		    Button
 		    	size_hint: 0.15, .7
-	    		pos_hint: {'center_x': .85, 'center_y': .6}
+	    		pos_hint: {'center_x': .88, 'center_y': .6}
 	    		text: "Select mode"
 	    		color: 1,1,0,1
 	    		on_press: root.dismiss()

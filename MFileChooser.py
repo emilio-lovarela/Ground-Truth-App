@@ -103,9 +103,9 @@ class Loadcsv(Popup):
 					except:
 						continue
 
-					# Check if value its a int number between 1, 256
-					if value > 0 and value < 256:
-						if key != "background":
+					# Check if value its a int number
+					if value > 1:
+						if key != "background" and key != "borders":
 							self.dic_classes[key] = value
 
 			# Check fails
@@ -125,12 +125,12 @@ class ChangeClass(Popup):
 	classes = DictProperty()
 	current_class = ObjectProperty()
 	class_name = StringProperty("class1")
-	class_color = ListProperty([color_palette[3]/255, color_palette[4]/255, color_palette[5]/255, 1])
+	class_color = ListProperty([color_palette[6]/255, color_palette[7]/255, color_palette[8]/255, 1])
 	
 	advice = StringProperty("")
 	block = False
 	shift = False
-	max_num = 2
+	max_num = 3
 	not_used_num = []
 	mode = StringProperty("normal") # normal, edit, remove
 	save_clasi = False
@@ -148,13 +148,13 @@ class ChangeClass(Popup):
 
 		# Format the button
 		button.color = [0,0,0,1]
-		color_num = 1
+		color_num = 2
 		button.background_normal = ""
 		button.background_color = self.class_color
 		self.ids.grid.add_widget(button)
 
 		# Classes dictionary and current class
-		self.classes[self.class_name] = 1
+		self.classes[self.class_name] = 2
 		self.current_class = button
 		self.keycode = ""
 
@@ -164,7 +164,7 @@ class ChangeClass(Popup):
 		if self.mode == "edit":
 			if self.block == True:
 				# If class text is empty, or used return advice
-				if self.current_class.text == "" or self.current_class.text == "background":
+				if self.current_class.text == "" or self.current_class.text == "background" or self.current_class.text == "borders":
 					self.advice = "Invalid name!"
 				elif self.classes.get(self.current_class.text) != None and self.current_class.text != self.class_name:
 					self.advice = "Class name already exists!"
@@ -205,7 +205,7 @@ class ChangeClass(Popup):
 
 		# Normal mode options
 		# Handle empty classes
-		if len(self.keycode) == 0 or self.keycode == "background":
+		if len(self.keycode) == 0 or self.keycode == "background" or self.keycode == "borders":
 			self.advice = "Invalid name!"
 			return
 
@@ -305,6 +305,7 @@ class ChangeClass(Popup):
 		self.not_used_num = list(self.load_class.dic_classes.values())
 		self.not_used_num.reverse()
 		self.max_num = max(self.not_used_num) + 1
+		not_used_num = [x for x in range(self.max_num - 1) if x not in self.not_used_num and x not in [0,1]]
 
 		# Update widgets and dictionary
 		classes = self.load_class.dic_classes
@@ -317,6 +318,8 @@ class ChangeClass(Popup):
 		# Update text and current class
 		if self.clasifi == False:
 			self.button_calback(self.ids.grid.children[-1])
+
+		self.not_used_num = not_used_num # Update not_used_num
 
 	# Keyboard write grab
 	def keyboard_grab(self, keycode):
@@ -358,6 +361,8 @@ class ChangeClass(Popup):
 class Options(Popup):
 	mode = StringProperty("Segmentation") # Clasification, Bounding_boxes, Segmentation, Instance
 	description = StringProperty(text_labels.get("Segmentation"))
+	caption = BooleanProperty(False)
+	borders = BooleanProperty(False)
 
 	# Update description
 	def change_description(self, key):

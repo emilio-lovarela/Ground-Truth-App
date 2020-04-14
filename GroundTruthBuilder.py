@@ -36,6 +36,8 @@ class LinePlay(StackLayout):
 	load_path = ""
 	mode = StringProperty("Segmentation")
 	id_instance = 1
+	caption = False
+	borders = False
 	
 	vol_dimension = BooleanProperty(True)
 	max_dime = NumericProperty(1)
@@ -51,8 +53,8 @@ class LinePlay(StackLayout):
 	# Class variables
 	colors_lis = ListProperty([])
 	class_name = StringProperty("class1")
-	class_color = ListProperty([color_palette[3]/255, color_palette[4]/255, color_palette[5]/255, 1])
-	class_number = 1
+	class_color = ListProperty([color_palette[6]/255, color_palette[7]/255, color_palette[8]/255, 1])
+	class_number = 2
 
 	# Images list names
 	images = glob.glob(path + '*.jpg') + glob.glob(path + '*.png')
@@ -115,7 +117,7 @@ class LinePlay(StackLayout):
 	def update_path(self, _):
 		# If path change, then change images dir
 		if self.path_change != self.obj.path:
-			# Evaluate the 4 possibilites
+			# Evaluate the 3 possibilites
 			if self.obj.cu_state == "2D": # 2D images in a folder
 				new_path = self.obj.path.replace(os.path.sep, '/') + "/"
 				self.images = glob.glob(new_path + '*.jpg') + glob.glob(new_path + '*.png') + glob.glob(new_path + '*.BMP') + glob.glob(new_path + '*.tiff') + glob.glob(new_path + '*.tif') + glob.glob(new_path + '*.jfif') + glob.glob(new_path + '*.jpge')
@@ -217,6 +219,8 @@ class LinePlay(StackLayout):
 	# Update mode of options
 	def update_options(self, _):
 		self.mode = self.options_class.mode
+		self.borders = self.options_class.borders
+		self.caption = self.options_class.caption
 
 		# Prevent select class while loading csv
 		if self.mode == "Clasification":
@@ -234,6 +238,8 @@ class LinePlay(StackLayout):
 		self.bounding_csv = []
 		self.wait_cont = []
 		self.tex_control = ""
+		self.switchid.active = False
+		self.filter_boolean = False
 
 	def changeimage(self, value, value2):
 		self.close = False # Reiniciate close line
@@ -258,15 +264,15 @@ class LinePlay(StackLayout):
 				self.image_car.texture = CoreImage(bytes_im, ext=self.extension[1:].lower()).texture
 				self.image_car.size = Image.open(bytes_im).size
 			elif self.obj.cu_state == "Volume":
-				self.ima_volume.change_slice(int(value), int(value2)) # change the slice position
+				self.ima_volume.change_slice(self.images[int(value)], int(value2)) # change the slice position
 				self.image_car.texture = self.ima_volume.texture
 				self.image_car.size = self.ima_volume.size
 
 				# Update filename with correct dimensions code
 				if self.vol_dimension == True:
-					self.file_name = self.vol_name + "_" + str(int(value))
+					self.file_name = self.vol_name + "_" + str(self.images[int(value)])
 				else:
-					self.file_name = self.vol_name + "_" + str(int(value)) + "_" + str(int(value2))
+					self.file_name = self.vol_name + "_" + str(self.images[int(value)]) + "_" + str(int(value2))
 					self.max_dime = self.ima_volume.max_dime
 
 		# Reiniciate factors
@@ -281,19 +287,97 @@ class LinePlay(StackLayout):
 			self.filter_images(True)
 			self.slider_max.value = valu
 
+	# Tree walk relative paths inside a foler
+	def tree_walk(self, root_dir):
+		file_set = set()
+
+		for dir_, _, files in os.walk(root_dir):
+			for file_name in files:
+				rel_dir = os.path.relpath(dir_, root_dir)
+				if rel_dir != ".":
+					rel_file = os.path.join(rel_dir, file_name).replace(os.path.sep, '/')
+				else:
+					rel_file = file_name
+				file_set.add(rel_file)
+
+		return list(file_set)
+
 	# Functions to filter used images in dir
 	def filter_type(self, image):
-		if image.replace(image[image.rfind("."):], "_mask.png")[image.rfind("\\") + 1: ] not in self.lista_ima:
+		if image.replace(image[image.rfind("."):], self.exten2)[image.rfind("\\") + 1: ] not in self.lista_ima:
 			return True
 
 	def filter_images(self, state):
-		if os.path.exists(self.obj.path + "_masks"):
-			if state == True:
-				self.lista_ima = os.listdir(self.obj.path + "_masks")
-				self.images = list(filter(self.filter_type, self.images))
+		
+		# Volume 4 dimension filter disabled
+		if self.vol_dimension == False:
+			self.switchid.active = False
+			return
+
+		if self.mode == "Segmentation" or self.mode == "Instance":
+			self.exten = "_masks"
+			self.exten2 = "_mask.png"
+		else:
+			self.exten = "_csv"
+			self.exten2 = "_csv.txt"
+
+		if self.obj.cu_state == "2D":
+			folder_path = self.obj.path + self.exten
+		else:
+			folder_path = os.path.dirname(self.obj.path) + self.exten
+			file_name, _ = os.path.splitext(os.path.basename(self.obj.path))
+			file_name, _ = os.path.splitext(file_name)
+			folder_path = folder_path + "/" + file_name
+
+		# Filter JSON file in classification mode
+		if self.mode == "Clasification" and state == True:
+			file, _ = os.path.splitext(self.obj.path)
+			file, _ = os.path.splitext(file)
+			name = os.path.basename(file)
+			file = file + ".json"
+
+			filter_store = JsonStore(file)
+
+			self.lista_ima = []
+			for item in filter_store:
+				self.lista_ima.append(item + "_csv.txt")
+
+			if self.obj.cu_state == "Volume": # Filter volume num
+				for x in self.lista_ima:
+					x = x.replace(name + "_", "").replace(self.exten2, "")
+					try:
+						self.images.remove(int(x))
+					except:
+						continue
 			else:
-				new_path = self.obj.path.replace(os.path.sep, '/') + "/"
-				self.images = glob.glob(new_path + '*.jpg') + glob.glob(new_path + '*.png') + glob.glob(new_path + '*.BMP') + glob.glob(new_path + '*.tiff')
+				self.images = list(filter(self.filter_type, self.images))
+
+			# Reiniciate slider values
+			self.slider_max.max = len(self.images) - 1
+			self.slider_max.value = 0
+			return
+
+		# Filter image list
+		if os.path.exists(folder_path):
+			if state == True:
+				if self.obj.cu_state == "Compress":
+					self.lista_ima = self.tree_walk(folder_path)
+					self.images = list(filter(self.filter_type, self.images))
+				elif self.obj.cu_state == "Volume":
+					self.lista_ima = []
+					for x in os.listdir(folder_path):
+						x = x.replace(file_name + "_", "").replace(self.exten2, "")
+						try:
+							self.images.remove(int(x))
+						except:
+							continue
+				else:
+					self.lista_ima = os.listdir(folder_path)
+					self.images = list(filter(self.filter_type, self.images))
+
+			else:
+				self.path_change = ""
+				self.update_path(None)
 				self.filter_boolean = False # Reiniciate default state
 				self.disa = False
 		else:
@@ -687,6 +771,8 @@ class LinePlay(StackLayout):
 			if len(self.change_class.classes) > 1:
 				with open(csv_path, mode='w') as file:
 					file.write("background\t0")
+					if self.borders == True:
+						file.write("\nborders\t1")
 					for item in self.change_class.classes:
 						file.write("\n" + item + "\t" + str(self.change_class.classes.get(item)))
 
@@ -706,18 +792,25 @@ class LinePlay(StackLayout):
 
 		if self.mode == "Instance" or self.mode == "Segmentation":
 			# Generated mask
-			final_image = Image.new("P", [int(round(self.ori_size[0])),int(round(self.ori_size[1]))])
-			
-			# Activate color_palette
-			final_image.putpalette(color_palette)
+			if len(self.change_class.classes) > 254:
+				final_image = Image.new("I", [int(round(self.ori_size[0])),int(round(self.ori_size[1]))])
+			else:
+				final_image = Image.new("P", [int(round(self.ori_size[0])),int(round(self.ori_size[1]))])
+				# Activate color_palette
+				final_image.putpalette(color_palette[:256*3])
+
 			draw = ImageDraw.Draw(final_image)
 
 			# Updating last points in list
 			self.final_lpoints = [[(x[0] - self.image_car.pos[0], self.image_car.size[1] - (x[1] - self.image_car.pos[1])) for x in y] for y in self.final_points]
 
 			# Drawing lines
-			for i in range(len(self.final_lpoints)):
-				draw.polygon(self.final_lpoints[i], fill=self.colors_lis[i], outline=self.colors_lis[i])
+			if self.borders == True:
+				for i in range(len(self.final_lpoints)):
+					draw.polygon(self.final_lpoints[i], fill=self.colors_lis[i], outline=1)
+			else:
+				for i in range(len(self.final_lpoints)):
+					draw.polygon(self.final_lpoints[i], fill=self.colors_lis[i], outline=self.colors_lis[i])
 
 		# Saved final image in mask folder
 		if self.obj.cu_state == "2D":
