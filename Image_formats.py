@@ -1,10 +1,10 @@
 from kivy.app import App
 from kivy.uix.image import Image
 from kivy.graphics.texture import Texture
-import numpy as np
+from numpy import uint8
 from zipfile import ZipFile
-import nibabel as nib
-import cv2
+from nibabel import load
+from cv2 import normalize, NORM_MINMAX, COLOR_GRAY2BGR, cvtColor, flip
 
 # Class to extract a numpy image from a volume and convert to a texture
 class Volume_image(Image):
@@ -13,19 +13,19 @@ class Volume_image(Image):
 		super(Volume_image, self).__init__()
 
 		# Load volume 3d or 4d and select initial image
-		self.volume_nii = nib.load(file_path)
+		self.volume_nii = load(file_path)
 		if len(self.volume_nii.shape) == 3:
 			img_base = self.volume_nii.get_fdata()[:,0,:]
-			img_base = cv2.normalize(img_base, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX).astype(np.uint8)
+			img_base = normalize(img_base, dst=None, alpha=0, beta=255, norm_type=NORM_MINMAX).astype(uint8)
 			self.dimension = True
 			self.max_dime = 0
 		else:
-			img_base = self.volume_nii.get_fdata()[:,0,:,0].astype(np.uint8)
-			img_base = cv2.normalize(img_base, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX).astype(np.uint8)
+			img_base = self.volume_nii.get_fdata()[:,0,:,0].astype(uint8)
+			img_base = normalize(img_base, dst=None, alpha=0, beta=255, norm_type=NORM_MINMAX).astype(uint8)
 			self.dimension = False
 			self.max_dime = self.volume_nii.shape[3] - 1
 
-		self.img = cv2.cvtColor(img_base, cv2.COLOR_GRAY2BGR)
+		self.img = cvtColor(img_base, COLOR_GRAY2BGR)
 
 		self.size = (self.img.shape[0], self.img.shape[1])
 		self.lenght = self.volume_nii.shape[1]
@@ -33,7 +33,7 @@ class Volume_image(Image):
 		self.TransformToTexture()
 
 	def TransformToTexture(self):
-		buf1 = cv2.flip(self.img, 0)
+		buf1 = flip(self.img, 0)
 		buf = buf1.tostring()
 		image_texture = Texture.create(size=(self.img.shape[1], self.img.shape[0]), colorfmt='bgr')
 		image_texture.blit_buffer(buf, colorfmt='bgr', bufferfmt='ubyte')
@@ -43,12 +43,12 @@ class Volume_image(Image):
 	def change_slice(self, val, val2):
 		if len(self.volume_nii.shape) == 3:
 			img_base = self.volume_nii.get_fdata()[:,val,:]
-			img_base = cv2.normalize(img_base, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX).astype(np.uint8)
+			img_base = normalize(img_base, dst=None, alpha=0, beta=255, norm_type=NORM_MINMAX).astype(uint8)
 		else:
 			img_base = self.volume_nii.get_fdata()[:,val,:,val2]
-			img_base = cv2.normalize(img_base, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX).astype(np.uint8)
+			img_base = normalize(img_base, dst=None, alpha=0, beta=255, norm_type=NORM_MINMAX).astype(uint8)
 
-		self.img = cv2.cvtColor(img_base, cv2.COLOR_GRAY2BGR)
+		self.img = cvtColor(img_base, COLOR_GRAY2BGR)
 
 		self.size = (self.img.shape[0], self.img.shape[1])
 		self.TransformToTexture()

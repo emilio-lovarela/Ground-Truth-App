@@ -6,7 +6,10 @@ from kivy.properties import StringProperty, ObjectProperty, DictProperty, ListPr
 
 from os.path import isdir, exists, isfile
 from zipfile import ZipFile
+from threading import Thread
+from datetime import datetime
 from Color_palette import text_render_size, color_palette, text_labels
+from Dropbox_link import LoadCsvDopbox
 
 Builder.load_file("MFileChooser.kv")
 
@@ -17,7 +20,7 @@ class MFileChooser(Popup):
 	RootPath = StringProperty('')
 	Invalid_Path = StringProperty('')
 	store = JsonStore('RootPath.json')
-	cu_state = "" # Possibilities 2D, Volume, Video, Compress
+	cu_state = "2D" # Possibilities 2D, Volume, Video, Compress
 
 	def __init__(self):
 		super(MFileChooser, self).__init__()
@@ -111,6 +114,7 @@ class Loadcsv(Popup):
 			# Check fails
 			if len(self.dic_classes) == 0:
 				self.dismiss()
+				return
 
 			self.load_path = file_path
 			self.dismiss()
@@ -120,6 +124,7 @@ class ChangeClass(Popup):
 
 	# Variables and kivy properties
 	load_class = Loadcsv()
+	load_class_dropbox = LoadCsvDopbox()
 	load_path = ""
 	keycode = StringProperty("class1")
 	classes = DictProperty()
@@ -135,6 +140,8 @@ class ChangeClass(Popup):
 	mode = StringProperty("normal") # normal, edit, remove
 	save_clasi = False
 	clasifi = False
+	running_thread = False
+	using_dropbox = BooleanProperty(False)
 
 	# Charge default values
 	def __init__(self):
@@ -158,8 +165,9 @@ class ChangeClass(Popup):
 		self.current_class = button
 		self.keycode = ""
 
+
 	# Add current class if not exist
-	def new_class(self):
+	def new_class(self, lock_file):
 
 		if self.mode == "edit":
 			if self.block == True:
@@ -209,6 +217,14 @@ class ChangeClass(Popup):
 			self.advice = "Invalid name!"
 			return
 
+		# Check if using dropbox and if must lock dropbox file
+		if self.using_dropbox == True and lock_file == True:
+			self.advice = "No in dropbox mode!"
+		else:
+			self.create_class()
+
+	# Auxiliar function for new class
+	def create_class(self):
 		# Fill dic with new value
 		if self.classes.get(self.keycode) == None:
 			if self.not_used_num:
@@ -217,7 +233,10 @@ class ChangeClass(Popup):
 				self.classes[self.keycode] = self.max_num
 				self.max_num += 1
 		else:
+			self.auto_dismiss = True
+			self.advice_label.color = (1,0,0,1)
 			self.advice = "Class already exists!"
+			self.running_thread = False
 			return
 
 		width = self.calculate_render_len()
@@ -235,6 +254,10 @@ class ChangeClass(Popup):
 
 		# Reiniciate keycode
 		self.keycode = ""
+		if self.running_thread == True:
+			self.auto_dismiss = True
+			self.advice_label.color = (1,0,0,1)
+			self.running_thread = False
 
 	# Edit class names
 	def change_class(self):
@@ -295,6 +318,16 @@ class ChangeClass(Popup):
 				if button != instance:
 					button.disabled = True
 
+	# Fire different popup using dropbox
+	def fire_popup(self):
+		if self.using_dropbox == False:
+			self.load_class.bind(on_dismiss=self.update_classes)
+			self.load_class.open()
+		else:
+			self.load_class_dropbox.bind(on_dismiss=self.update_classes_dropbox)
+			self.load_class_dropbox.background_load() # Create the representation
+			self.load_class_dropbox.open()
+
 	# Update classes from csv callback
 	def update_classes(self, _):
 		# Handle auto dismiss error
@@ -313,11 +346,41 @@ class ChangeClass(Popup):
 		self.ids.grid.clear_widgets()
 		for item in classes:
 			self.keycode = item
-			self.new_class()
+			self.new_class(False)
 
 		# Update text and current class
 		if self.clasifi == False:
 			self.button_calback(self.ids.grid.children[-1])
+
+		self.not_used_num = not_used_num # Update not_used_num
+
+	# Update classes from csv in dropbox callback
+	def update_classes_dropbox(self, drop_compro):
+
+		# If classes is empty dont update
+		if not self.load_class_dropbox.dic_classes:
+			self.advice = "No classes in csv!"
+			return
+
+		# Update control variables
+		self.load_path = self.load_class_dropbox.load_path
+		self.not_used_num = list(self.load_class_dropbox.dic_classes.values())
+		self.not_used_num.reverse()
+		self.max_num = max(self.not_used_num) + 1
+		not_used_num = [x for x in range(self.max_num - 1) if x not in self.not_used_num and x not in [0,1]]
+
+		# Update widgets and dictionary
+		classes = self.load_class_dropbox.dic_classes
+		self.classes = {}
+		self.ids.grid.clear_widgets()
+		for item in classes:
+			self.keycode = item
+			self.new_class(False)
+
+		# Update text and current class
+		if drop_compro != True:
+			self.button_calback(self.ids.grid.children[-1])
+			self.advice = ""
 
 		self.not_used_num = not_used_num # Update not_used_num
 
@@ -331,7 +394,7 @@ class ChangeClass(Popup):
 		elif keycode == "spacebar":
 			self.keycode = self.keycode + " "
 		elif keycode == "enter":
-			self.new_class()
+			self.new_class(True)
 		elif keycode == "capslock" or keycode == "shift" or keycode == "tab" or keycode == "lctrl" or keycode == "rctrl":
 			pass
 		elif keycode == "up" or keycode == "down" or keycode == "left" or keycode == "right":
@@ -361,8 +424,8 @@ class ChangeClass(Popup):
 class Options(Popup):
 	mode = StringProperty("Segmentation") # Clasification, Bounding_boxes, Segmentation, Instance
 	description = StringProperty(text_labels.get("Segmentation"))
-	caption = BooleanProperty(False)
 	borders = BooleanProperty(False)
+	dropbox = BooleanProperty(False)
 
 	# Update description
 	def change_description(self, key):

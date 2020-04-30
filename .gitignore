@@ -2,6 +2,9 @@ images/
 images_masks/
 images_csv/
 __pycache__/
+temp/
+temp_files/
+instrucctions/
 Instrucctions.jpg
 RootPath.json
 images_csv_tag_color.txt

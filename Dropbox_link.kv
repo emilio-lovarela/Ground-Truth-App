@@ -1,0 +1,150 @@
+<Dropbox_images>:
+	advice_label: advi
+	sele_button: sel_button
+	filecho: FileCho
+	size_hint: .8, .8
+    title: str(FileCho.path).replace("\\", "/", 40).replace(root.rootpath, "")
+    
+	BoxLayout:
+		orientation: 'vertical'
+		rows: 4
+	
+		Label:
+			size_hint: 1, .2
+			text: "Select DropBox Folder"
+			valign: "top"
+			halign: "center"
+			font_size: 30
+			color: 0,0.4,1,1
+
+	    FileChooserIconView:
+	    	id: FileCho
+	    	size_hint: 1, 1
+	        filters: ["*.png", "*.jpg", "*.JPG", "*.jpeg", '*.jfif', "*.tiff", "*.tif", "*.BMP", "*.bmp"]
+		    rootpath: root.rootpath
+
+		Label:
+			id: advi
+			size_hint: 1, .1
+			text: root.advice
+			valign: "top"
+			halign: "center"
+			font_size: 20
+			color: 1,0,0,1
+
+	    RelativeLayout:
+	    	size_hint: 1, .2
+	    	orientation: 'horizontal'
+
+	    	Button:
+	    		id: sel_button
+	    		size_hint: 0.3, .5
+	    		pos_hint: {'center_x': .8, 'center_y': .5}
+	    		text: "Select current folder"
+	    		color: 1,1,0,1
+	    		disabled: False if ([True for file in FileCho.files if file.lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '*.tiff', '.jfif', '.bmp', '*.BMP')) == True]) else True
+	    		on_press: root.background_final_files()
+	    		on_press: self.disabled = True
+
+	    	Button:
+	    		text: "Create Project"
+	    		size_hint: 0.2, .5
+	    		pos_hint: {'center_x': .2, 'center_y': .5}
+	    		background_color: 0,0.4,1,.9
+	            background_normal: ''
+	            color: 0,0,0,1
+	    		on_press: root.advice = "See Images 3 and 4 in the instructions!"
+	    		on_press: root.open_web_dropbox()
+
+	    	Button:
+	    		text: "Access Token"
+	    		size_hint: 0.2, .5
+	    		pos_hint: {'center_x': .45, 'center_y': .5}
+	    		background_color: 248/255, 255/255, 51/255, .9
+	            background_normal: ''
+	            color: 0,0,0,1
+	            on_press: root.fire_pop()
+	            on_press: FileCho.path = ""
+
+<LoadCsvDopbox>:
+	advice_label: advice
+	size_hint: .8, .8
+    title: ""
+
+	BoxLayout:
+		orientation: 'vertical'
+		rows: 2
+	
+		Label:
+			size_hint: 1, .2
+			text: "Select CSV File in Dropbox"
+			valign: "top"
+			halign: "center"
+			font_size: 30
+			color: 0,0.4,1,1
+
+		BoxLayout:
+			id: box_options
+			size_hint: 1, 1
+			orientation: 'vertical'
+
+		Label:
+			id: advice
+			size_hint: 1, .2
+			text: root.advice
+			halign: "center"
+			font_size: 20
+			color: 1,0,0,1
+
+<LoadToken>:
+	advice_label: advice
+	size_hint: .7, .7
+    title: ""
+
+	BoxLayout:
+		orientation: 'vertical'
+		rows: 2
+	
+		Label:
+			size_hint: 1, .2
+			text: "Select Token"
+			valign: "top"
+			halign: "center"
+			font_size: 30
+			color: 0,0.4,1,1
+
+		BoxLayout:
+			id: box_options
+			size_hint: 1, 1
+			orientation: 'vertical'
+
+		Label:
+			id: advice
+			size_hint: 1, .2
+			text: root.advice
+			halign: "center"
+			font_size: 20
+			color: 1,0,0,1
+
+		RelativeLayout:
+			size_hint: 1, .1
+	    	orientation: 'horizontal'
+
+			Button:
+				text: "Paste token from clipboard"
+				size_hint: 0.38, 1
+	    		pos_hint: {'center_x': .3, 'center_y': .5}
+	    		background_color: 248/255, 255/255, 51/255, .9
+	            background_normal: ''
+	            color: 0,0,0,1
+	            on_press: root.paste_token()
+
+	        ToggleButton:
+				text: "Delete Token mode"
+				size_hint: 0.3, 1
+	    		pos_hint: {'center_x': .75, 'center_y': .45}
+	            on_state: root.delete = self.state
+
+        BoxLayout:
+			size_hint: 1, .08
+			orientation: 'vertical'

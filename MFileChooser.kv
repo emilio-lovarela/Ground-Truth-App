@@ -20,7 +20,7 @@
 	    FileChooserIconView:
 	    	id: FileCho
 	    	size_hint: 1, 1
-	        filters: ["*.png", "*.jpg", "*.jpeg", '*.jfif', "*.tiff", "*.tif", "*.BMP", "*.bmp", "*.nii", "*.nii.gz", "*.zip"]
+	        filters: ["*.png", "*.PNG", "*.jpg", "*JPG", "*.jpeg", '*.jfif', "*.tiff", "*.tif", "*.BMP", "*.bmp", "*.nii", "*.nii.gz", "*.zip"]
 		    path: root.RootPath
 		    on_submit: root.dismiss_popup_volume()
 
@@ -33,7 +33,7 @@
 	    		pos_hint: {'center_x': .8, 'center_y': .5}
 	    		text: "Select current folder"
 	    		color: 1,1,0,1
-	    		disabled: False if ([True for file in FileCho.files if file.lower().endswith(('.png', '.jpg', '.jpeg', "*.tiff", "*.BMP")) == True]) else True
+	    		disabled: False if ([True for file in FileCho.files if file.lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '*.tiff', '.jfif', '.bmp', '*.BMP')) == True]) else True
 	    		on_press: root.dismiss_popup_images()
 
 	    	Button:
@@ -56,6 +56,7 @@
 	    		color: 1,0,0,1
 
 <ChangeClass>:
+	advice_label: advice
 	remover: remover
 	normaler: normaler
 	id: general
@@ -81,16 +82,18 @@
 		ScrollView:
 		    do_scroll_x: False
 		    bar_width: 3
-            effect_cls: "ScrollEffect"
+		    scroll_wheel_distance: 100
+            effect_cls: "DampedScrollEffect"
 
 			StackLayout:
 				orientation: 'lr-tb'
-				spacing: [30,10]
+				spacing: [30,5]
 				size_hint_y: None
 				height: self.minimum_height
 				id:grid
 
 		Label:
+			id: advice
 			size_hint: 1, .1
 			text: root.advice
 			text_size: self.size
@@ -117,7 +120,7 @@
 	    		pos_hint: {'center_x': .16, 'center_y': .5}
 	    		text: "New Class"
 	    		color: 0,1,0,1
-	    		on_press: root.new_class()
+	    		on_press: root.new_class(True)
 
 	    	ToggleButton:
 	    		id: normaler
@@ -146,6 +149,8 @@
 	    		pos_hint: {'center_x': .5, 'center_y': .5}
 	    		text: "E"
 	    		color: 1,1,1,1
+	    		opacity: 0 if root.using_dropbox == True else 1
+	    		disabled: True if root.using_dropbox == True else False
 	    		on_press: root.mode = "edit"
 	    		on_press: load.disabled = True
 	    		on_press: self.color = 1,1,0,1
@@ -164,6 +169,8 @@
 	    		pos_hint: {'center_x': .595, 'center_y': .5}
 	    		text: "R"
 	    		color: 1,1,1,1
+	    		opacity: 0 if root.using_dropbox == True else 1
+	    		disabled: True if root.using_dropbox == True else False
 	    		on_press: root.mode = "remove"
 	    		on_press: load.disabled = True
 	    		on_press: self.color = 1,0,0,1
@@ -183,8 +190,7 @@
 	    		pos_hint: {'center_x': .84, 'center_y': .5}
 	    		text: "Load CSV"
 	    		color: 1,1,0,1
-	    		on_press: root.load_class.bind(on_dismiss=root.update_classes)
-	    		on_press: root.load_class.open()
+	    		on_press: root.fire_popup()
 
 <Loadcsv>:
 	size_hint: .8, .8
@@ -233,6 +239,7 @@
 			cols: 4
 
 			ToggleButton:
+				id: classifi
 				allow_no_selection: False
 				group: "mode_op"
 	    		size_hint: 1, 1
@@ -242,6 +249,7 @@
 	    		on_press: root.change_description("Clasification")
 
 	    	ToggleButton:
+	    		id: detect
 	    		allow_no_selection: False
 				group: "mode_op"
 	    		size_hint: 1, 1
@@ -251,6 +259,7 @@
 	    		on_press: root.change_description("Bounding_boxes")
 
 	    	ToggleButton:
+	    		id: semanti
 	    		allow_no_selection: False
 				group: "mode_op"
 	    		size_hint: 1, 1
@@ -261,6 +270,7 @@
 	    		on_press: root.change_description("Segmentation")
 
 	    	ToggleButton:
+	    		id: instan
 	    		allow_no_selection: False
 				group: "mode_op"
 	    		size_hint: 1, 1
@@ -285,18 +295,8 @@
 	    	size_hint: 1, .1
 
 	    	GridLayout:
-	    		size_hint: .4, 1
-	    		cols: 4
-
-		    	Label:
-		    		text: "Caption"
-		    		font_size: 17
-		    		text_size: self.size
-		    		valign: "middle"
-					halign: "right"
-
-		    	CheckBox:
-		    		on_active: root.caption = self.active
+	    		size_hint: .44, 1
+	    		cols: 6
 
 		    	Label:
 		    		text: "Borders"
@@ -304,23 +304,32 @@
 		    		text_size: self.size
 		    		valign: "middle"
 					halign: "right"
+					color: 1,0.5,0,1
 
 		    	CheckBox:
 		    		on_active: root.borders = self.active
 
-	    	Button:
-	    		size_hint: 0.18, .7
-	    		pos_hint: {'center_x': .6, 'center_y': .6}
-	    		text: "Create data"
-	    		disabled: True
-	    		font_size: 17
-	    		background_color: 51/255, 255/255, 121/255, 1
-	            background_normal: ''
-	            color: 0,0,0,1
+		    	Label:
+		    		text: "Dropbox"
+		    		font_size: 17
+		    		text_size: self.size
+		    		valign: "middle"
+					halign: "right"
+					color: 1,0.5,0,1
+
+		    	CheckBox:
+		    		on_active: root.dropbox = self.active
+		    		on_active: semanti.state = "down"
+		    		on_active: root.change_description("Segmentation")
+		    		on_active: classifi.disabled = self.active
+		    		on_active: instan.state = "normal"
+		    		on_active: classifi.state = "normal"
+		    		on_active: detect.state = "normal"
 		    	
 		    Button
-		    	size_hint: 0.15, .7
-	    		pos_hint: {'center_x': .88, 'center_y': .6}
+		    	size_hint: 0.19, .75
+	    		pos_hint: {'center_x': .85, 'center_y': .7}
 	    		text: "Select mode"
 	    		color: 1,1,0,1
+	    		font_size: 18
 	    		on_press: root.dismiss()
