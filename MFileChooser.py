@@ -17,7 +17,7 @@ Builder.load_file("MFileChooser.kv")
 class MFileChooser(Popup):
 
 	path = StringProperty('')
-	RootPath = StringProperty('')
+	RootPath = StringProperty('/')
 	Invalid_Path = StringProperty('')
 	store = JsonStore('RootPath.json')
 	cu_state = "2D" # Possibilities 2D, Volume, Video, Compress
@@ -84,7 +84,7 @@ class MFileChooser(Popup):
 class Loadcsv(Popup):
 	load_path = ""
 	dic_classes = {}
-	RootPath = StringProperty('')
+	RootPath = StringProperty('/')
 	store = JsonStore('RootPath.json')
 
 	def __init__(self):

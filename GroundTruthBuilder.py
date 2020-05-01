@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
+
 from glob import glob 
 from os import getcwd, walk, listdir
 from os import remove as remove_f
+from os import name as name_system
 from os.path import basename, sep, splitext, dirname, relpath, join, exists
 from time import sleep
 from shutil import rmtree
@@ -17,6 +20,8 @@ from datetime import datetime
 from pytz import timezone
 from kivy.config import Config
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
+Config.set('kivy', 'exit_on_escape', '0')
+Config.set('kivy','window_icon','icons/icon.png')
 
 from kivy.app import App
 from kivy.properties import NumericProperty, ListProperty, \
@@ -25,13 +30,16 @@ from kivy.uix.stacklayout import StackLayout
 from kivy.uix.image import CoreImage
 from kivy.graphics import Line, Color
 from kivy.storage.jsonstore import JsonStore
-from kivy.core.window import Window # Just in windows?
+from kivy.lang import Builder
+from kivy.core.window import Window
 from MFileChooser import MFileChooser, ChangeClass, Options
 from Image_formats import Compress_image, Volume_image
 from Color_palette import color_palette
 from Dropbox_link import Dropbox_images
 from Client import Chat_multiple, Server_loading
 from Server import Server
+
+Builder.load_file("GroundTruthMain.kv")
 
 class LinePlay(StackLayout):
 
@@ -116,11 +124,16 @@ class LinePlay(StackLayout):
 		Window.bind(on_resize=self.window_size_control)
 		Window.bind(on_request_close=self.on_request_close)
 		self.windows_sizes = [Window.size]
-		Window.maximize() # Just work in windows?
+		Window.maximize()
 		self.windows_sizes.append(Window.size)
 
 	# Allow two sizes
 	def window_size_control(self, _, t, r):
+		
+		# Check if system is windows
+		if name_system != "nt":
+			return
+
 		if len(self.windows_sizes) == 2:
 			if t == self.windows_sizes[1][0] and r == self.windows_sizes[1][1]:
 				return
@@ -197,7 +210,7 @@ class LinePlay(StackLayout):
 			# Evaluate the 3 possibilites
 			if self.obj.cu_state == "2D": # 2D images in a folder
 				new_path = self.obj.path.replace(sep, '/') + "/"
-				self.images = glob(new_path + '*.jpg') + glob(new_path + '*.png') + glob(new_path + '*.BMP') + glob(new_path + '*.tiff') + glob(new_path + '*.tif') + glob(new_path + '*.jfif') + glob(new_path + '*.jpge')
+				self.images = glob(new_path + '*.jpg') + glob(new_path + '*.png') + glob(new_path + '*.BMP') + glob(new_path + '*.tiff') + glob(new_path + '*.tif') + glob(new_path + '*.jfif') + glob(new_path + '*.jpeg')
 				self.img = self.images[0]
 
 				# Filename and extension
@@ -637,8 +650,13 @@ class LinePlay(StackLayout):
 
 	# Functions to filter used images in dir
 	def filter_type(self, image):
-		if image.replace(image[image.rfind("."):], self.exten2)[image.rfind("\\") + 1: ] not in self.lista_ima:
-			return True
+		# Check if system is Unix and 2d images in local system
+		if name_system != "nt" and self.using_dropbox == False and self.obj.cu_state == "2D":
+			if image.replace(image[image.rfind("."):], self.exten2)[image.rfind("/") + 1: ] not in self.lista_ima:
+				return True
+		else:
+			if image.replace(image[image.rfind("."):], self.exten2)[image.rfind("\\") + 1: ] not in self.lista_ima:
+				return True
 
 	def filter_images(self, state):
 		
