@@ -27,7 +27,6 @@ class LoadToken(Popup):
 	delete = "normal"
 	token = ""
 	running_thread = False
-	kill = False
 
 	def __init__(self):
 		super(LoadToken, self).__init__()
@@ -49,7 +48,6 @@ class LoadToken(Popup):
 		else:
 			# Check if token changes
 			if button.text == self.token:
-				self.kill = False
 				self.dismiss()
 				return
 
@@ -80,7 +78,6 @@ class LoadToken(Popup):
 			self.token = button.text
 
 			# Dismiss and update
-			self.kill = True
 			self.dismiss()
 			self.running_thread = False
 		except:
@@ -160,6 +157,7 @@ class Dropbox_images(Popup):
 	extensions_posi = {".png", ".jpg", ".JPG", ".PNG", ".jpeg", '.jfif', ".tiff", ".tif", ".BMP", ".bmp"}
 	advice = StringProperty("")
 	change = False # Control update process
+	change_2 = False
 	running_thread = False
 	running_thread2 = False
 	problem = False
@@ -322,15 +320,6 @@ class Dropbox_images(Popup):
 		self.auto_dismiss = True
 		self.running_thread2 = False
 
-	# Lock file auxiliar function and update dropbox file
-	def lock_file_dropbox(self, ip_adress):
-		try:
-			bytes_str = bytes(ip_adress, 'utf-8')
-			self.dbx.files_upload(bytes_str, "/Config_Folder/lock_file.txt", strict_conflict=True)
-			return True
-		except:
-			return False
-
 	# Obtain URL from image path for asyn load
 	def URL_from_image(self, path):
 		URL = self.dbx.files_get_temporary_link(path)
@@ -352,10 +341,7 @@ class Dropbox_images(Popup):
 		self.dbx = self.token_class.dbx
 		self.token_class.advice = ""
 		self.change = True
-		if self.token_class.kill == True:
-			self.dismiss()
-		else:
-			self.background_load()
+		self.background_load()
 
 
 # FIleChooser load/save csv

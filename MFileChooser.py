@@ -7,7 +7,6 @@ from kivy.properties import StringProperty, ObjectProperty, DictProperty, ListPr
 from os.path import isdir, exists, isfile
 from zipfile import ZipFile
 from threading import Thread
-from datetime import datetime
 from Color_palette import text_render_size, color_palette, text_labels
 from Dropbox_link import LoadCsvDopbox
 

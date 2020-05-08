@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from glob import glob 
+from glob import glob
 from os import getcwd, walk, listdir
 from os import remove as remove_f
 from os import name as name_system
@@ -15,13 +15,10 @@ from zipfile import ZipFile
 from shapely.geometry import Polygon
 from dropbox.files import WriteMode
 from threading import Thread
-from socket import socket, gethostbyname, gethostname
-from datetime import datetime
-from pytz import timezone
 from kivy.config import Config
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 Config.set('kivy', 'exit_on_escape', '0')
-Config.set('kivy','window_icon','icons/icon.png')
+Config.set('kivy','window_icon','Instructions/zzicon.png')
 
 from kivy.app import App
 from kivy.properties import NumericProperty, ListProperty, \
@@ -36,26 +33,20 @@ from MFileChooser import MFileChooser, ChangeClass, Options
 from Image_formats import Compress_image, Volume_image
 from Color_palette import color_palette
 from Dropbox_link import Dropbox_images
-from Client import Chat_multiple, Server_loading
-from Server import Server
 
 Builder.load_file("GroundTruthMain.kv")
 
 class LinePlay(StackLayout):
 
-	path = 'instrucctions/'
-	default_path = getcwd()
-	default_path = default_path.replace("\\", "/", 40) + "\\" "Instrucctions.jpg"
+	path = 'Instructions/'
+	default_path = 'Instructions/Instructions1.jpg'
 
 	# General Properties
 	obj = MFileChooser()
 	path_change = '' # Control changes in path
 	options_class = Options()
 	change_class = ChangeClass()
-	chat_class = Chat_multiple()
 	dropbox_class = Dropbox_images()
-	server_class = Server()
-	server_loading_class = Server_loading()
 	write_mode = BooleanProperty(False)
 	load_path = ""
 	mode = StringProperty("Segmentation")
@@ -63,6 +54,8 @@ class LinePlay(StackLayout):
 	borders = False
 	dropbox = False
 	using_dropbox = False
+	drop_filt = False # When filter in dropbox mode
+	change_restric = False
 	
 	vol_dimension = BooleanProperty(True)
 	max_dime = NumericProperty(1)
@@ -100,17 +93,6 @@ class LinePlay(StackLayout):
 	# Variables to save
 	ori_size = ListProperty([])
 	zoom_val = 0
-
-	# Connection variable
-	HOST = 'localhost'
-	PORT = 33000
-	BUFSIZ = 1024
-	change_restric = False
-	server_instance = False
-	drop_filt = False
-	ima_used_by_users = {} # Current images in use by some user
-	client_socket = -1
-	blocking_check_server = False
 	
 	# Functions
 	def __init__(self, **kwargs):
@@ -122,7 +104,6 @@ class LinePlay(StackLayout):
 
 		# Control window size possibilities and close
 		Window.bind(on_resize=self.window_size_control)
-		Window.bind(on_request_close=self.on_request_close)
 		self.windows_sizes = [Window.size]
 		Window.maximize()
 		self.windows_sizes.append(Window.size)
@@ -142,15 +123,6 @@ class LinePlay(StackLayout):
 		else:
 			return
 
-	# Ejecute on close app if using dropbox
-	def on_request_close(self, _):
-		if self.using_dropbox == True:
-			try:
-				if self.server_instance == True:
-					self.dropbox_class.dbx.files_delete("/Config_Folder/lock_file.txt")
-			except:
-				pass
-
 	# Function to Popup
 	def fire_popup(self, pops, filechooser):
 		if filechooser == "filechooser":
@@ -161,10 +133,6 @@ class LinePlay(StackLayout):
 			pops.bind(on_dismiss=self.update_class)
 		elif filechooser == "options":
 			pops.bind(on_dismiss=self.update_options)
-		elif filechooser == "chat":
-			self._keyboard_closed() # Close keyboard to use textinput
-			self.chat_class.text_cu_in.multiline = False
-			pops.bind(on_dismiss=self.rebind_keyboard)
 		elif filechooser == "dropbox":
 			pops.bind(on_dismiss=self.update_dropbox)
 
@@ -256,41 +224,12 @@ class LinePlay(StackLayout):
 		if self.dropbox_class.change == False:
 			return
 		else:
-			# Kill is active kill server and update
-			if self.dropbox_class.token_class.kill == True:
-				self.dropbox_class.token_class.kill = False
-				self.blocking_check_server = True
 
-				# If you are the server
-				if self.server_instance == True:
-					self.client_socket.close()
-					self.server_class.kill_server()
-					self.dropbox_class.auto_dismiss = False
-					self.ima_used_by_users = {}
-					try:
-						self.dropbox_class.dbx.files_delete("/Config_Folder/lock_file.txt")
-					except:
-						pass
-				elif self.client_socket == -1:
-					self.blocking_check_server = False
-					self.dropbox_class.change = False
-					self.ima_used_by_users = {}
-				else:
-					self.dropbox_class.auto_dismiss = False
-					self.dropbox_class.change = False
-					self.client_socket.close()
-					self.ima_used_by_users = {}
-
-				self.dropbox_class.background_load() # Recharge
-				return True
-
+			# Update
 			self.dropbox_class.auto_dismiss = True
-			self.blocking_check_server = False
 			self.change_class.load_class_dropbox.dbx = self.dropbox_class.dbx
 			self.change_class.load_class_dropbox.first_time = True
 			self.change_class.load_class_dropbox.ids.box_options.clear_widgets()
-			# Check if server is on
-			self.check_server_operative()
 
 			self.switchid.active = False
 			self.using_dropbox = True
@@ -383,101 +322,6 @@ class LinePlay(StackLayout):
 		self.switchid.active = False
 		self.filter_boolean = False
 
-	# Conect, create and manage server things
-	def check_server_operative(self):
-		for tries in range(2):
-			# Check if still conected to the server
-			try:
-				self.client_socket.sendall(bytes("p", "utf8"))
-				return
-			except:
-				sleep(0.2)
-
-		# Try to reconect to the server
-		try:
-			# Connect to server if exists if not create a server
-			self.client_socket = self.chat_class.connect_to_server(self.HOST, self.PORT)
-			if self.client_socket == -1: # Raise error
-				raise Exception("")
-			self.ima_used_by_users = {} # Reiniciate current images
-			self.background_Thread_creation_listen()
-			return
-		except:
-
-			# Create server
-			self.fire_popup(self.server_loading_class, "")
-
-			t = Thread(target=self.background_server_creation)
-			t.daemon = True
-			t.start()
-
-	# Background server creation
-	def background_server_creation(self):
-
-		# Create server
-		self.server_instance = False
-		while True:
-			# Try to lock the config file in dropbox to prevent some server creation
-			try:
-				ip_adress = gethostbyname(gethostname())
-				compro = self.dropbox_class.lock_file_dropbox(ip_adress)
-				if compro == False:
-					raise
-
-				self.server_instance = True
-				self.HOST = ip_adress
-				self.server_class.HOST = ip_adress
-
-				# Create the thread to invoke server creation
-				t = Thread(target=self.background_server_listen)
-				t.daemon = True
-				t.start()
-			except:
-				# Check new host, loading or internet error
-				try:
-					for tries in range(2):
-						# Update HOST
-						metadata, res = self.dropbox_class.dbx.files_download(path="/Config_Folder/lock_file.txt")
-						self.HOST = res.content.decode("utf8")
-
-						# Connect to server if exists
-						self.client_socket = self.chat_class.connect_to_server(self.HOST, self.PORT)
-						if self.client_socket != -1: # Connection works!
-							self.ima_used_by_users = {} # Reiniciate current images
-							self.background_Thread_creation_listen()
-							self.server_loading_class.dismiss() # Dismiss Loading popup
-							return
-
-						# Sleep and try in a few seconds	
-						sleep(0.2)
-					
-					# Reiniciate acces to create the server if file is old
-					time_date = self.dropbox_class.dbx.files_alpha_get_metadata("/Config_Folder/lock_file.txt")
-					now = datetime.now(timezone("UTC")).replace(tzinfo=None)
-					creation_time = (now - time_date.server_modified).total_seconds()
-
-					# If file is old delete lcok file
-					if creation_time > 10:
-						self.dropbox_class.dbx.files_delete("/Config_Folder/lock_file.txt")
-				except:
-					self.tex_control = "Internet error!"
-					return
-
-	# Background checking new messages from server
-	def background_server_listen(self):
-
-		self.server_class.create_server(self.HOST, self.PORT) # Host the server
-
-	# Background server listen
-	def background_Thread_creation_listen(self):
-
-		# Create the thread to invoke function
-		t = Thread(target=self.receive_from_server)
-		# Set daemon to true so the thread dies when app is closed
-		t.daemon = True
-		# Start the thread
-		t.start()
-
 	# Background checking new messages from server
 	def background_Thread_image_size(self):
 
@@ -502,34 +346,6 @@ class LinePlay(StackLayout):
 		self.slider_max.disabled = False
 		self.change_restric = False
 
-	# Reciving messages
-	def receive_from_server(self):
-		"""Handles receiving of messages."""
-		while True:
-			try:
-				msg = self.client_socket.recv(self.BUFSIZ).decode("utf8")
-				# Classify the message
-				if msg[0] == "m":
-					self.chat_class.receive_from_server(msg[1:])
-					self.chat_but.background_normal = "icons/chat_active.png" # Update chat_button state
-					self.chat_but.text = "'"
-				elif msg[0] == "U":
-					pos = msg.rfind("c")
-					user = msg[0:pos]
-					path = msg[pos + 1: ]
-					self.ima_used_by_users[user] = path
-				elif msg[0] == "n": # Initial number of users
-					self.chat_class.number_users = str(int(msg[1:]))
-					self.chat_but.background_normal = "icons/chat_active.png" # Update chat_button state
-					self.chat_but.text = "'"
-				elif msg[0] == "a": # New or delete user
-					self.chat_class.number_users = str(int(self.chat_class.number_users) + int(msg[1:]))
-			except:
-				# Check if server is on
-				if self.blocking_check_server == False:
-					self.check_server_operative()
-				break
-
 	def changeimage(self, value, value2):
 		self.close = False # Reiniciate close line
 		if len(self.images) < 1:
@@ -547,7 +363,6 @@ class LinePlay(StackLayout):
 
 					# Check if filter is active and filter list of images
 					if self.switchid.active == True:
-						self.images = self.copy_images # Reiniciate
 						try:
 							files_fil = self.dropbox_class.dbx.files_list_folder_continue(self.cursor_filter)
 							self.cursor_filter = files_fil.cursor
@@ -560,14 +375,6 @@ class LinePlay(StackLayout):
 							new_filter_path = pos_fil.path_display.replace("_masks", "").replace("_mask.png", "")
 							self.images = [x for x in self.images if new_filter_path not in x]
 
-						# Filter with current images other users
-						self.copy_images = self.images.copy()
-						for ima in self.ima_used_by_users.values():
-							try:
-								self.images.remove(ima)
-							except:
-								continue
-
 						# If value greater than len list then change
 						self.drop_filt = True
 						if value >= len(self.images):
@@ -577,9 +384,6 @@ class LinePlay(StackLayout):
 						else:
 							# self.slider_max.value = value
 							self.slider_max.max = len(self.images) - 1
-
-						# Send current image to the rest
-						self.client_socket.send(bytes("c" + self.images[int(self.slider_max.value)], "utf8"))
 
 					self.drop_filt = False
 					img_name_path = self.images[int(value)]
@@ -733,8 +537,6 @@ class LinePlay(StackLayout):
 					self.lista_ima.append(folder_path.replace(self.exten, "/") + file.name)
 				self.ori_images = self.images.copy()
 				self.images = list(filter(self.filter_type, self.images)) # Filter images
-				
-				self.copy_images = self.images.copy()
 			else:
 				if self.change_filter_dropbox == True:
 					self.change_filter_dropbox = False
@@ -771,10 +573,6 @@ class LinePlay(StackLayout):
 		# Reiniciate slider values
 		self.slider_max.max = len(self.images) - 1
 		self.slider_max.value = 0
-
-		if self.using_dropbox == True and len(self.images) > 0:
-			# Send current image to the rest
-			self.client_socket.send(bytes("c" + self.images[int(self.slider_max.value)], "utf8"))
 
 	# Handle touchs
 	def on_touch_down(self, touch):
@@ -829,18 +627,6 @@ class LinePlay(StackLayout):
 	# keyboard controler
 	def _keyboard_closed(self):
 		self._keyboard.unbind(on_key_down=self._on_keyboard_down)
-
-	# Rebind keyboard after use textinput
-	def rebind_keyboard(self, _):
-		# Check if internet fail
-		if self.chat_class.check_internet == True:
-			pass
-		self.chat_class.check_internet = False
-		self.chat_class.text_cu_in.focus = False
-		self.chat_class.text_cu_in.multiline = True
-		self.chat_but.background_normal = "icons/chat_inactive.png" # Update chat_button state
-		self.chat_but.text = ""
-		self._keyboard.bind(on_key_down=self._on_keyboard_down)
 
 	def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
 
