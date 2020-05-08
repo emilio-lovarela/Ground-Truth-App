@@ -75,7 +75,7 @@ class LinePlay(StackLayout):
 	class_number = 2
 
 	# Images list names
-	images = glob(path + '*.jpg')
+	images = sorted(glob(path + '*.JPG'))
 	lista_ima = "" # To filter used images
 	LImages = len(images) - 1
 	filter_boolean = False
@@ -178,7 +178,10 @@ class LinePlay(StackLayout):
 			# Evaluate the 3 possibilites
 			if self.obj.cu_state == "2D": # 2D images in a folder
 				new_path = self.obj.path.replace(sep, '/') + "/"
-				self.images = glob(new_path + '*.jpg') + glob(new_path + '*.png') + glob(new_path + '*.BMP') + glob(new_path + '*.tiff') + glob(new_path + '*.tif') + glob(new_path + '*.jfif') + glob(new_path + '*.jpeg')
+				if name_system != "nt":
+					self.images = glob(new_path + '*.jpg') + glob(new_path + '*.png') + glob(new_path + '*.BMP') + glob(new_path + '*.tiff') + glob(new_path + '*.tif') + glob(new_path + '*.jfif') + glob(new_path + '*.jpeg') + glob(new_path + '*.JPG') + glob(new_path + '*.PNG') + glob(new_path + '*.bmp') + glob(new_path + '*.TIFF') + glob(new_path + '*.TIF') + glob(new_path + '*.JFIF') + glob(new_path + '*.JPEG')
+				else:
+					self.images = glob(new_path + '*.jpg') + glob(new_path + '*.png') + glob(new_path + '*.BMP') + glob(new_path + '*.tiff') + glob(new_path + '*.tif') + glob(new_path + '*.jfif') + glob(new_path + '*.jpeg')
 				self.img = self.images[0]
 
 				# Filename and extension

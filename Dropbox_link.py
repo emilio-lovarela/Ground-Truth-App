@@ -154,7 +154,7 @@ class Dropbox_images(Popup):
 	token_class = LoadToken()
 	folder_list = []
 	images_paths = []
-	extensions_posi = {".png", ".jpg", ".JPG", ".PNG", ".jpeg", '.jfif', ".tiff", ".tif", ".BMP", ".bmp"}
+	extensions_posi = {".png", ".jpg", ".JPG", ".PNG", ".jpeg", '.jfif', '.JFIF', ".tiff", ".tif", ".BMP", ".bmp", ".TIF", ".TIFF"}
 	advice = StringProperty("")
 	change = False # Control update process
 	change_2 = False
