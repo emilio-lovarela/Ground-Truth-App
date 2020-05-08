@@ -1,6 +1,6 @@
 # Ground-Truth-App
 
-<p align="center"> <img src="https://github.com/emilio-lovarela/Ground-Truth-App/blob/master/Instructions/Instructions1.JPG?raw=true" alt="screenshot" width="400"><img src="https://github.com/emilio-lovarela/Ground-Truth-App/blob/master/Instructions/Instructionsz12.jpg?raw=true" alt="screenshot" width="400"></p>
+<p align="center"> <img src="https://github.com/emilio-lovarela/Ground-Truth-App/blob/master/Instructions/Instructions1.JPG?raw=true" alt="screenshot" width="500"><img src="https://github.com/emilio-lovarela/Ground-Truth-App/blob/master/Instructions/Instructionsz12.jpg?raw=true" alt="screenshot" width="600"></p>
 
 This is a Kivy app to facilitate the creation of image masks, labels, Ground-truth... to train Deep learning neural networks in the tasks of Classification, Object Detection, Semantic Segmentation and Instance Segmentation.
 
