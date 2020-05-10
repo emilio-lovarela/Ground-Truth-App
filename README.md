@@ -6,7 +6,7 @@ This is a Kivy app to facilitate the creation of image masks, labels, Ground-tru
 
 ## Windows users
 Windows users can download a ready-to-use executable at the following link. Clicking the link downloads a zip file that contains the executable. When you run the program, the instructions will appear on the screen as images.
-[Click here to download](<https://www.dropbox.com/s/di6oxtp17qdkut3/GroundTruthApp.zip?dl=1>)
+[Click here to download](<https://www.dropbox.com/s/qylpotu51rvngrb/GroundTruthApp.zip?dl=1>)
 
 ## Linux users (Windows users can also use it)
 
