@@ -1125,6 +1125,9 @@ class LinePlay(StackLayout):
 					w = w - x
 					h = h - y
 
+					# Convert to Top-left Origin
+					y = self.image_car.size[1] - y - h
+
 					# Write lines in file
 					write_line = clas + "\t" + str(round(x)) + "\t" + str(round(y)) + "\t" + str(round(w)) + "\t" + str(round(h)) + "\n"
 					file.write(write_line)
