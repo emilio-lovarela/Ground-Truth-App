@@ -1,7 +1,7 @@
 urllib3==1.25.7
 Shapely==1.7.0
 Pillow==7.0.0
-numpy==1.18.1
+numpy==1.22.0
 nibabel==3.0.2
 dropbox==9.5.0
 pytz==2019.3
